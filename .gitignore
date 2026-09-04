@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+UpgradeLog.htm
+Backup/
+Installer/Debug/
+Installer/Release/
+Installer/Autosave/

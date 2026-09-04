@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+  </Configurations>
+  <Project Path="GrokLauncher.csproj" Id="6f3a9c21-8b47-4e1d-a5c0-91d2e4b7f803" />
+  <Project Path="Installer/GrokLauncherSetup.vdproj" Id="178d6714-0972-3fbe-ceba-403985ce8e8f" />
+</Solution>

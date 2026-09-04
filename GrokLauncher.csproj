@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GrokLauncher</RootNamespace>
+    <AssemblyName>GrokLauncher</AssemblyName>
+    <ApplicationTitle>Grok Launcher</ApplicationTitle>
+    <Product>Grok Launcher</Product>
+    <Description>Launch Grok Build in a chosen project folder.</Description>
+    <ApplicationIcon>Assets\GrokLauncher.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <ProjectGuid>{6F3A9C21-8B47-4E1D-A5C0-91D2E4B7F803}</ProjectGuid>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Assets\GrokLauncher.ico" />
+  </ItemGroup>
+
+</Project>

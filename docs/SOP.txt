@@ -1,0 +1,57 @@
+SOP — programming sessions (all projects)
+
+A session is one sitting with one specific goal. It is not the whole product and not "whatever comes up."
+
+Start of session
+
+State or agree:
+
+1. Goal — one sentence.
+2. Done when — what we will see on the real machine, UI, or log. Not "the code looks right."
+3. Don't break — constraints that stay unless the goal changes them.
+
+If we cannot fill Done when in one sentence, we are not ready to code.
+
+FSD (only when meaning changes)
+
+When a command, coordinate system, or user-visible behavior changes, write a half-page functional spec first: name, inputs, outputs, pass, fail, out of scope. A bug fix in existing behavior does not need an FSD.
+
+While working
+
+- Keep the change scoped to the goal.
+- Do not claim done, fixed, or tested without evidence (build, flash, test, or log).
+- Verify on the real target when the work is hardware, motion, or UI. A compile is not a motion test.
+- Prefer one behavior per session. If we finish early, that is a new session with a new goal.
+
+Naming
+
+- No single-letter locals unless the declaration line has a comment saying what it is.
+- Prefer a self-documenting name: float PulsesForPopoff; not float p;.
+- Loop indexes may be axis, sample, row — not i unless commented.
+
+Single-line if
+
+One statement: keep it on one line, with a comment on that line when the reason is not obvious.
+
+if (cond) action; /* comment */
+
+Example: if (popOffDistance <= 0.0f) popOffDistance = 1.0f; /* M233 not set */
+
+Use braces only when the body is more than one statement. Do not write a braced one-liner, and do not put a single action on the next line without braces.
+
+Installers
+
+Only a Microsoft Installer project may be used: a Visual Studio Setup Project (.vdproj) in the solution, producing a Windows Installer (.msi). Add that installer project to the solution and take Publish Items (or Primary Output) from the app project.
+
+Do not use WiX, Inno Setup, NSIS, ClickOnce, MSIX, or any other installer stack.
+
+End of session
+
+- Build (and flash, if this repo flashes) before calling the sitting done.
+- Push when the sitting is over, even if the next sitting is "improve it."
+- Leave the next goal in one sentence if it is already known.
+
+This file
+
+Home rule: ~/.grok/rules/sop.md — Grok loads it for every project.
+Copy in a repo: docs/SOP.txt — humans and git. Project addenda (boards, tools) go in that repo's SOP or AGENTS.md, not here.
