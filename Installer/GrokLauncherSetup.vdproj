@@ -13,6 +13,36 @@
 "SccProvider" = "8:"
     "Hierarchy"
     {
+        "Entry"
+        {
+        "MsmKey" = "8:_A8F31C42B0D64E9A87C15E6F4B2D9031"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B9E42D53C1E75F0B98D26F7A5C3E0142"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CAF53E64D2F8601CA9E3708B6D4F1253"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_DB064F75E309712DB0F4819C7E502364"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EC175086F41A823EC10592AD8F613475"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -68,6 +98,106 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A8F31C42B0D64E9A87C15E6F4B2D9031"
+            {
+            "SourcePath" = "8:..\\bin\\Release\\net10.0-windows\\publish\\GrokLauncher.exe"
+            "TargetName" = "8:GrokLauncher.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B9E42D53C1E75F0B98D26F7A5C3E0142"
+            {
+            "SourcePath" = "8:..\\bin\\Release\\net10.0-windows\\publish\\GrokLauncher.dll"
+            "TargetName" = "8:GrokLauncher.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CAF53E64D2F8601CA9E3708B6D4F1253"
+            {
+            "SourcePath" = "8:..\\bin\\Release\\net10.0-windows\\publish\\GrokLauncher.deps.json"
+            "TargetName" = "8:GrokLauncher.deps.json"
+            "Tag" = "8:"
+            "Folder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DB064F75E309712DB0F4819C7E502364"
+            {
+            "SourcePath" = "8:..\\bin\\Release\\net10.0-windows\\publish\\GrokLauncher.runtimeconfig.json"
+            "TargetName" = "8:GrokLauncher.runtimeconfig.json"
+            "Tag" = "8:"
+            "Folder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EC175086F41A823EC10592AD8F613475"
+            {
+            "SourcePath" = "8:..\\Assets\\GrokLauncher.ico"
+            "TargetName" = "8:GrokLauncher.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -142,7 +272,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:Launch Grok Build in a chosen project folder."
         "ARPURLINFOABOUT" = "8:"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_EC175086F41A823EC10592AD8F613475"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -245,6 +375,34 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FD286197052B934FD216A3BE90724586"
+            {
+            "Name" = "8:Grok Launcher"
+            "Arguments" = "8:"
+            "Description" = "8:Launch Grok Build in a project folder"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_A8F31C42B0D64E9A87C15E6F4B2D9031"
+            "Folder" = "8:_9BE9ABA5C2A84C439CD4511EBEF71866"
+            "WorkingFolder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Icon" = "8:_EC175086F41A823EC10592AD8F613475"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_0E3972A8163CA450E327B4CF01835697"
+            {
+            "Name" = "8:Grok Launcher"
+            "Arguments" = "8:"
+            "Description" = "8:Launch Grok Build in a project folder"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_A8F31C42B0D64E9A87C15E6F4B2D9031"
+            "Folder" = "8:_43847A151D1B46169984FF83A2886483"
+            "WorkingFolder" = "8:_483EB5A95F1542689805B086761789E8"
+            "Icon" = "8:_EC175086F41A823EC10592AD8F613475"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
