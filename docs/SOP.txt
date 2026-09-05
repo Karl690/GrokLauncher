@@ -39,6 +39,19 @@ Example: if (popOffDistance <= 0.0f) popOffDistance = 1.0f; /* M233 not set */
 
 Use braces only when the body is more than one statement. Do not write a braced one-liner, and do not put a single action on the next line without braces.
 
+Title and revision
+
+Every project has revisionHistory.h at the repo root (next to the app or firmware sources). It is the only place the product title and revision are defined:
+
+#define APP_TITLE "Grok Launcher"
+#define APP_REVISION "V1.000"
+
+Revision format is Vn.nnn (example V1.000). Bump APP_REVISION in that file when a release meaning changes.
+
+C# WinForms: every form title bar shows APP_TITLE, a space, then APP_REVISION — for this app, Grok Launcher V1.000. Read the defines from revisionHistory.h. Do not hard-code the caption in the designer as the source of truth.
+
+C/C++: #include "revisionHistory.h" and use the same defines wherever the product name is shown to the user.
+
 Installers
 
 Only a Microsoft Installer project may be used: a Visual Studio Setup Project (.vdproj) in the solution, producing a Windows Installer (.msi). Add that installer project to the solution and take Publish Items (or Primary Output) from the app project.

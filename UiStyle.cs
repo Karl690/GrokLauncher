@@ -14,6 +14,7 @@ internal static class UiStyle
 
     public static void ApplyTo(Control root)
     {
+        if (root is Form form) form.Text = RevisionHistory.TitleBar; /* caption from revisionHistory.h */
         ApplyTree(root, Text);
         if (root is ListView listView)
             ApplyListViewHeaderFont(listView);

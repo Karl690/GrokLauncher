@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <None Include="Assets\GrokLauncher.ico" />
+    <EmbeddedResource Include="revisionHistory.h" />
   </ItemGroup>
 
 </Project>
