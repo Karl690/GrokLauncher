@@ -8,6 +8,11 @@ internal sealed class AppSettings
 
     public List<string> RecentFolders { get; set; } = new();
     public string? LastNewProjectRoot { get; set; }
+    public int WindowLeft { get; set; }
+    public int WindowTop { get; set; }
+    public int WindowWidth { get; set; }
+    public int WindowHeight { get; set; }
+    public int WindowState { get; set; }
 
     static readonly JsonSerializerOptions JsonOptions = new()
     {

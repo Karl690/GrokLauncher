@@ -56,6 +56,8 @@ Installers
 
 Only a Microsoft Installer project may be used: a Visual Studio Setup Project (.vdproj) in the solution, producing a Windows Installer (.msi). Add that installer project to the solution and take Publish Items (or Primary Output) from the app project.
 
+After a successful installer build, a post-build step renames the .msi so the file name includes APP_REVISION from revisionHistory.h (example GrokLauncherSetup_V1.003.msi).
+
 Do not use WiX, Inno Setup, NSIS, ClickOnce, MSIX, or any other installer stack.
 
 Push

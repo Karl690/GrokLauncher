@@ -16,6 +16,7 @@ public partial class MainForm : Form
         System.Drawing.Icon? associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         if (associatedIcon is not null) Icon = associatedIcon;
         UiStyle.ApplyTo(this);
+        RestoreWindowBounds();
         ShowTemplateNotes();
         PopulateRecentList();
         RestoreLastRoot();
@@ -313,6 +314,46 @@ public partial class MainForm : Form
     void MainForm_FormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
         SaveCurrentNotes();
+        RememberWindowBounds();
+        _settings.Save();
+    }
+
+    void RememberWindowBounds()
+    {
+        Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+        _settings.WindowLeft = bounds.Left;
+        _settings.WindowTop = bounds.Top;
+        _settings.WindowWidth = bounds.Width;
+        _settings.WindowHeight = bounds.Height;
+        if (WindowState == FormWindowState.Minimized) _settings.WindowState = (int)FormWindowState.Normal; /* reopen restored */
+        else _settings.WindowState = (int)WindowState;
+    }
+
+    void RestoreWindowBounds()
+    {
+        if (_settings.WindowWidth < MinimumSize.Width) return;
+        if (_settings.WindowHeight < MinimumSize.Height) return;
+
+        var bounds = new Rectangle(
+            _settings.WindowLeft,
+            _settings.WindowTop,
+            _settings.WindowWidth,
+            _settings.WindowHeight);
+        if (!WindowBoundsAreOnAScreen(bounds)) return;
+
+        StartPosition = FormStartPosition.Manual;
+        Bounds = bounds;
+        if (_settings.WindowState == (int)FormWindowState.Maximized) WindowState = FormWindowState.Maximized;
+    }
+
+    static bool WindowBoundsAreOnAScreen(Rectangle bounds)
+    {
+        foreach (Screen screen in Screen.AllScreens)
+        {
+            if (screen.WorkingArea.IntersectsWith(bounds)) return true;
+        }
+
+        return false;
     }
 
     void ShowTemplateNotes()
