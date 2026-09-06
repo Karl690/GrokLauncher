@@ -47,7 +47,7 @@ partial class MainForm
         lblRecent.Font = UiStyle.Text;
         lblRecent.Location = new Point(20, 16);
         lblRecent.Name = "lblRecent";
-        lblRecent.Text = "Recent projects (last 10)";
+        lblRecent.Text = "Recent projects (last 20, most recent first)";
 
         lstRecent.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         lstRecent.Font = UiStyle.Text;
@@ -187,7 +187,7 @@ partial class MainForm
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.001";
+        Text = "Grok Launcher V1.002";
         FormClosing += MainForm_FormClosing;
         ResumeLayout(false);
         PerformLayout();

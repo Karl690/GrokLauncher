@@ -4,7 +4,7 @@ namespace GrokLauncher;
 
 internal sealed class AppSettings
 {
-    public const int MaxRecentFolders = 10;
+    public const int MaxRecentFolders = 20;
 
     public List<string> RecentFolders { get; set; } = new();
     public string? LastNewProjectRoot { get; set; }
@@ -48,7 +48,7 @@ internal sealed class AppSettings
     {
         string fullPath = Path.GetFullPath(folderPath);
         RecentFolders = NormalizeRecentFolders(
-            new[] { fullPath }.Concat(RecentFolders));
+            new[] { fullPath }.Concat(RecentFolders)); /* newest first, unique */
     }
 
     public void RemoveFolder(string folderPath)
