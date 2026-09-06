@@ -8,11 +8,31 @@ public partial class MainForm : Form
     bool _launchNewProject;
     bool _loadingNotes;
     bool _notesDirty;
+    bool _sizingRecentColumns;
+    readonly ToolTip _datePopup = new();
+    readonly System.Windows.Forms.Timer _dateHoverTimer = new();
+    ListViewItem? _datePopupRow;
+    ListViewItem? _dateHoverRow;
+    string _datePopupText = string.Empty;
+
+    const int LastChangedColumnIndex = 1;
+    const int DateHoverDelayMs = 400;
+    const int LastChangedMaxDepth = 12;
+    const int LastChangedMaxFiles = 8000;
+    static readonly HashSet<string> LastChangedSkipFolders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".git",
+        "node_modules",
+        ".vs",
+        "__pycache__",
+        ".idea"
+    };
 
     public MainForm()
     {
         _settings = AppSettings.Load();
         InitializeComponent();
+        InitDateHoverPopup();
         System.Drawing.Icon? associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         if (associatedIcon is not null) Icon = associatedIcon;
         UiStyle.ApplyTo(this);
@@ -22,6 +42,21 @@ public partial class MainForm : Form
         RestoreLastRoot();
         if (lstRecent.Items.Count > 0) lstRecent.Items[0].Selected = true;
         UpdateTargetPreview();
+    }
+
+    void InitDateHoverPopup()
+    {
+        components ??= new System.ComponentModel.Container();
+        components.Add(_datePopup);
+        components.Add(_dateHoverTimer);
+
+        _datePopup.ShowAlways = true;
+        _datePopup.OwnerDraw = true;
+        _datePopup.Popup += datePopup_Popup;
+        _datePopup.Draw += datePopup_Draw;
+
+        _dateHoverTimer.Interval = DateHoverDelayMs;
+        _dateHoverTimer.Tick += dateHoverTimer_Tick;
     }
 
     void RestoreLastRoot()
@@ -34,6 +69,7 @@ public partial class MainForm : Form
 
     void PopulateRecentList(string? selectFolder = null)
     {
+        CancelDateHover();
         lstRecent.BeginUpdate();
         lstRecent.Items.Clear();
 
@@ -42,7 +78,11 @@ public partial class MainForm : Form
             string projectName = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
             if (string.IsNullOrEmpty(projectName)) projectName = folder;
 
+            DateTime? lastChanged = TryGetLastChanged(folder);
+            string dateText = lastChanged is DateTime changedAt ? changedAt.ToString("yyyy-MM-dd") : string.Empty;
             var row = new ListViewItem(projectName) { Tag = folder };
+            ListViewItem.ListViewSubItem lastChangedCell = row.SubItems.Add(dateText);
+            lastChangedCell.Tag = lastChanged;
             row.SubItems.Add(folder);
             if (!Directory.Exists(folder)) row.ForeColor = SystemColors.GrayText; /* missing on disk */
             lstRecent.Items.Add(row);
@@ -51,7 +91,220 @@ public partial class MainForm : Form
         }
 
         lstRecent.EndUpdate();
+        SizeRecentColumns();
         if (lstRecent.SelectedItems.Count > 0) lstRecent.EnsureVisible(lstRecent.SelectedItems[0].Index);
+    }
+
+    void lstRecent_SizeChanged(object? sender, EventArgs eventArgs)
+    {
+        CancelDateHover();
+        SizeRecentColumns();
+    }
+
+    void SizeRecentColumns()
+    {
+        if (lstRecent.Columns.Count < 3) return;
+        if (_sizingRecentColumns) return;
+        _sizingRecentColumns = true;
+        try
+        {
+            int projectWidth = MeasureRecentColumn(0, "Project");
+            int changedWidth = MeasureRecentColumn(1, "Last changed");
+            int folderWidth = MeasureRecentColumn(2, "Folder");
+
+            lstRecent.Columns[0].Width = projectWidth;
+            lstRecent.Columns[1].Width = changedWidth;
+
+            int remainingWidth = lstRecent.ClientSize.Width - projectWidth - changedWidth - 8; /* avoid phantom h-scroll */
+            if (remainingWidth > folderWidth) folderWidth = remainingWidth; /* fill leftover space */
+            if (folderWidth < 40) folderWidth = 40;
+            lstRecent.Columns[2].Width = folderWidth;
+        }
+        finally
+        {
+            _sizingRecentColumns = false;
+        }
+    }
+
+    int MeasureRecentColumn(int columnIndex, string headerText)
+    {
+        const int cellPadding = 28; /* 18pt bold clips without extra cell inset */
+        int width = TextRenderer.MeasureText(headerText, lstRecent.Font).Width + cellPadding;
+        foreach (ListViewItem row in lstRecent.Items)
+        {
+            if (columnIndex >= row.SubItems.Count) continue;
+            int cellWidth = TextRenderer.MeasureText(row.SubItems[columnIndex].Text, lstRecent.Font).Width + cellPadding;
+            if (cellWidth > width) width = cellWidth;
+        }
+
+        return width;
+    }
+
+    static DateTime? TryGetLastChanged(string folder)
+    {
+        try
+        {
+            var root = new DirectoryInfo(folder);
+            if (!root.Exists) return null;
+
+            DateTime newestWrite = root.LastWriteTime; /* LastWriteTime, never CreationTime */
+            int filesSeen = 0;
+            WalkForNewestWrite(root, ref newestWrite, ref filesSeen, depth: 0);
+            return newestWrite;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    static void WalkForNewestWrite(DirectoryInfo directory, ref DateTime newestWrite, ref int filesSeen, int depth)
+    {
+        if (depth > LastChangedMaxDepth) return;
+        if (filesSeen >= LastChangedMaxFiles) return;
+
+        IEnumerable<FileInfo> files;
+        try
+        {
+            files = directory.EnumerateFiles();
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        foreach (FileInfo file in files)
+        {
+            filesSeen++;
+            if (filesSeen > LastChangedMaxFiles) return;
+            try
+            {
+                DateTime writeTime = file.LastWriteTime;
+                if (writeTime > newestWrite) newestWrite = writeTime;
+            }
+            catch (Exception)
+            {
+                /* skip unreadable file */
+            }
+        }
+
+        IEnumerable<DirectoryInfo> children;
+        try
+        {
+            children = directory.EnumerateDirectories();
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        foreach (DirectoryInfo child in children)
+        {
+            if (LastChangedSkipFolders.Contains(child.Name)) continue;
+            try
+            {
+                if ((child.Attributes & FileAttributes.ReparsePoint) != 0) continue; /* no symlink cycles */
+                DateTime folderWrite = child.LastWriteTime;
+                if (folderWrite > newestWrite) newestWrite = folderWrite;
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            WalkForNewestWrite(child, ref newestWrite, ref filesSeen, depth + 1);
+            if (filesSeen >= LastChangedMaxFiles) return;
+        }
+    }
+
+    void lstRecent_MouseMove(object? sender, MouseEventArgs eventArgs)
+    {
+        ListViewHitTestInfo hit = lstRecent.HitTest(eventArgs.Location);
+        if (hit.Item is null || hit.SubItem is null)
+        {
+            CancelDateHover();
+            return;
+        }
+
+        int columnIndex = hit.Item.SubItems.IndexOf(hit.SubItem);
+        if (columnIndex != LastChangedColumnIndex)
+        {
+            CancelDateHover();
+            return;
+        }
+
+        if (_datePopupRow == hit.Item) return; /* already showing for this row */
+        if (_dateHoverRow == hit.Item) return; /* wait for hover delay */
+
+        _dateHoverTimer.Stop();
+        HideDatePopup();
+        _dateHoverRow = hit.Item;
+        _dateHoverTimer.Start();
+    }
+
+    void lstRecent_MouseLeave(object? sender, EventArgs eventArgs)
+    {
+        CancelDateHover();
+    }
+
+    void dateHoverTimer_Tick(object? sender, EventArgs eventArgs)
+    {
+        _dateHoverTimer.Stop();
+        if (_dateHoverRow is null) return;
+        ShowDatePopup(_dateHoverRow);
+    }
+
+    void ShowDatePopup(ListViewItem row)
+    {
+        if (row.SubItems.Count <= LastChangedColumnIndex)
+        {
+            HideDatePopup();
+            return;
+        }
+
+        if (row.SubItems[LastChangedColumnIndex].Tag is not DateTime lastChanged)
+        {
+            HideDatePopup();
+            return;
+        }
+
+        _datePopupText = lastChanged.ToString("F");
+        Rectangle cellBounds = row.SubItems[LastChangedColumnIndex].Bounds;
+        Point popupAt = new Point(cellBounds.Left, cellBounds.Bottom + 4);
+        _datePopupRow = row;
+        _datePopup.Show(_datePopupText, lstRecent, popupAt);
+    }
+
+    void HideDatePopup()
+    {
+        _datePopupRow = null;
+        _datePopup.Hide(lstRecent);
+    }
+
+    void CancelDateHover()
+    {
+        _dateHoverTimer.Stop();
+        _dateHoverRow = null;
+        HideDatePopup();
+    }
+
+    void datePopup_Popup(object? sender, PopupEventArgs eventArgs)
+    {
+        Size textSize = TextRenderer.MeasureText(_datePopupText, UiStyle.Text);
+        eventArgs.ToolTipSize = new Size(textSize.Width + 24, textSize.Height + 16);
+    }
+
+    void datePopup_Draw(object? sender, DrawToolTipEventArgs eventArgs)
+    {
+        eventArgs.DrawBackground();
+        eventArgs.DrawBorder();
+        TextRenderer.DrawText(
+            eventArgs.Graphics,
+            eventArgs.ToolTipText,
+            UiStyle.Text,
+            eventArgs.Bounds,
+            SystemColors.InfoText,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
     }
 
     void btnNewProject_Click(object? sender, EventArgs eventArgs)
@@ -116,6 +369,7 @@ public partial class MainForm : Form
 
     void lstRecent_SelectedIndexChanged(object? sender, EventArgs eventArgs)
     {
+        CancelDateHover(); /* popup goes away when row focus changes */
         if (lstRecent.SelectedItems.Count == 0) return;
         SaveCurrentNotes();
         _launchNewProject = false;
@@ -313,6 +567,7 @@ public partial class MainForm : Form
 
     void MainForm_FormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
+        CancelDateHover();
         SaveCurrentNotes();
         RememberWindowBounds();
         _settings.Save();

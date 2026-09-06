@@ -12,9 +12,9 @@
     <Product>Grok Launcher</Product>
     <Description>Launch Grok Build in a chosen project folder.</Description>
     <ApplicationIcon>Assets\GrokLauncher.ico</ApplicationIcon>
-    <Version>1.0.4</Version>
-    <AssemblyVersion>1.0.4.0</AssemblyVersion>
-    <FileVersion>1.0.4.0</FileVersion>
+    <Version>1.0.5</Version>
+    <AssemblyVersion>1.0.5.0</AssemblyVersion>
+    <FileVersion>1.0.5.0</FileVersion>
     <ProjectGuid>{6F3A9C21-8B47-4E1D-A5C0-91D2E4B7F803}</ProjectGuid>
   </PropertyGroup>
 

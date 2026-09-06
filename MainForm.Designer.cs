@@ -57,18 +57,25 @@ partial class MainForm
         lstRecent.Location = new Point(20, 60);
         lstRecent.MultiSelect = false;
         lstRecent.Name = "lstRecent";
+        lstRecent.Scrollable = true;
+        lstRecent.ShowItemToolTips = false;
         lstRecent.Size = new Size(920, 200);
         lstRecent.TabIndex = 0;
         lstRecent.UseCompatibleStateImageBehavior = false;
         lstRecent.View = View.Details;
         lstRecent.Columns.AddRange(new ColumnHeader[]
         {
-            new ColumnHeader { Text = "Project", Width = 280 },
-            new ColumnHeader { Text = "Folder", Width = 610 }
+            new ColumnHeader { Text = "Project", Width = 200 },
+            new ColumnHeader { Text = "Last changed", Width = 180 },
+            new ColumnHeader { Text = "Folder", Width = 540 }
         });
         lstRecent.SelectedIndexChanged += lstRecent_SelectedIndexChanged;
         lstRecent.DoubleClick += lstRecent_DoubleClick;
         lstRecent.KeyDown += lstRecent_KeyDown;
+        lstRecent.SizeChanged += lstRecent_SizeChanged;
+        lstRecent.MouseMove += lstRecent_MouseMove;
+        lstRecent.MouseLeave += lstRecent_MouseLeave;
+        lstRecent.Leave += lstRecent_MouseLeave;
 
         btnRemoveRecent.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnRemoveRecent.Font = UiStyle.Text;
@@ -187,7 +194,7 @@ partial class MainForm
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.004";
+        Text = "Grok Launcher V1.005";
         FormClosing += MainForm_FormClosing;
         ResumeLayout(false);
         PerformLayout();
