@@ -9,11 +9,10 @@ public partial class MainForm : Form
     bool _loadingNotes;
     bool _notesDirty;
     bool _sizingRecentColumns;
-    readonly ToolTip _datePopup = new();
     readonly System.Windows.Forms.Timer _dateHoverTimer = new();
+    readonly Label _datePopupLabel = new();
     ListViewItem? _datePopupRow;
     ListViewItem? _dateHoverRow;
-    string _datePopupText = string.Empty;
 
     const int LastChangedColumnIndex = 1;
     const int DateHoverDelayMs = 400;
@@ -32,11 +31,12 @@ public partial class MainForm : Form
     {
         _settings = AppSettings.Load();
         InitializeComponent();
-        InitDateHoverPopup();
         System.Drawing.Icon? associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         if (associatedIcon is not null) Icon = associatedIcon;
         UiStyle.ApplyTo(this);
+        InitDateHoverPopup();
         RestoreWindowBounds();
+        RestoreRecentSplitter();
         ShowTemplateNotes();
         PopulateRecentList();
         RestoreLastRoot();
@@ -47,13 +47,19 @@ public partial class MainForm : Form
     void InitDateHoverPopup()
     {
         components ??= new System.ComponentModel.Container();
-        components.Add(_datePopup);
         components.Add(_dateHoverTimer);
 
-        _datePopup.ShowAlways = true;
-        _datePopup.OwnerDraw = true;
-        _datePopup.Popup += datePopup_Popup;
-        _datePopup.Draw += datePopup_Draw;
+        _datePopupLabel.AutoSize = true;
+        _datePopupLabel.BackColor = SystemColors.Info;
+        _datePopupLabel.BorderStyle = BorderStyle.FixedSingle;
+        _datePopupLabel.Font = UiStyle.Text;
+        _datePopupLabel.ForeColor = SystemColors.InfoText;
+        _datePopupLabel.Name = "lblDatePopup";
+        _datePopupLabel.Padding = new Padding(12, 8, 12, 8);
+        _datePopupLabel.Visible = false;
+        _datePopupLabel.MouseLeave += lstRecent_MouseLeave;
+        Controls.Add(_datePopupLabel);
+        _datePopupLabel.BringToFront();
 
         _dateHoverTimer.Interval = DateHoverDelayMs;
         _dateHoverTimer.Tick += dateHoverTimer_Tick;
@@ -220,14 +226,7 @@ public partial class MainForm : Form
     void lstRecent_MouseMove(object? sender, MouseEventArgs eventArgs)
     {
         ListViewHitTestInfo hit = lstRecent.HitTest(eventArgs.Location);
-        if (hit.Item is null || hit.SubItem is null)
-        {
-            CancelDateHover();
-            return;
-        }
-
-        int columnIndex = hit.Item.SubItems.IndexOf(hit.SubItem);
-        if (columnIndex != LastChangedColumnIndex)
+        if (hit.Item is null || ColumnIndexAtX(eventArgs.X) != LastChangedColumnIndex)
         {
             CancelDateHover();
             return;
@@ -244,6 +243,15 @@ public partial class MainForm : Form
 
     void lstRecent_MouseLeave(object? sender, EventArgs eventArgs)
     {
+        if (_datePopupLabel.Visible)
+        {
+            Point onPopup = _datePopupLabel.PointToClient(Cursor.Position);
+            if (_datePopupLabel.ClientRectangle.Contains(onPopup)) return;
+        }
+
+        Point onList = lstRecent.PointToClient(Cursor.Position);
+        if (lstRecent.ClientRectangle.Contains(onList)) return; /* still over the list */
+
         CancelDateHover();
     }
 
@@ -268,17 +276,49 @@ public partial class MainForm : Form
             return;
         }
 
-        _datePopupText = lastChanged.ToString("F");
-        Rectangle cellBounds = row.SubItems[LastChangedColumnIndex].Bounds;
-        Point popupAt = new Point(cellBounds.Left, cellBounds.Bottom + 4);
+        Rectangle cellBounds = DateCellBounds(row);
+        _datePopupLabel.Text = lastChanged.ToString("F");
+        _datePopupLabel.Visible = true;
+        _datePopupLabel.BringToFront();
+
+        Point belowCell = lstRecent.PointToScreen(new Point(cellBounds.Left, cellBounds.Bottom + 4));
+        Point onForm = PointToClient(belowCell);
+        if (onForm.Y + _datePopupLabel.Height > ClientSize.Height) onForm = PointToClient(lstRecent.PointToScreen(new Point(cellBounds.Left, cellBounds.Top - _datePopupLabel.Height - 4))); /* keep on form */
+        if (onForm.X + _datePopupLabel.Width > ClientSize.Width) onForm.X = ClientSize.Width - _datePopupLabel.Width;
+        if (onForm.X < 0) onForm.X = 0;
+        if (onForm.Y < 0) onForm.Y = 0;
+        _datePopupLabel.Location = onForm;
         _datePopupRow = row;
-        _datePopup.Show(_datePopupText, lstRecent, popupAt);
+    }
+
+    Rectangle DateCellBounds(ListViewItem row)
+    {
+        Rectangle bounds = row.SubItems[LastChangedColumnIndex].Bounds;
+        if (bounds.Width > 0 && bounds.Height > 0) return bounds;
+
+        int left = 0;
+        for (int columnIndex = 0; columnIndex < LastChangedColumnIndex; columnIndex++)
+            left += lstRecent.Columns[columnIndex].Width;
+        return new Rectangle(left, row.Bounds.Top, lstRecent.Columns[LastChangedColumnIndex].Width, row.Bounds.Height);
+    }
+
+    int ColumnIndexAtX(int clientX)
+    {
+        int left = 0;
+        for (int columnIndex = 0; columnIndex < lstRecent.Columns.Count; columnIndex++)
+        {
+            int width = lstRecent.Columns[columnIndex].Width;
+            if (clientX >= left && clientX < left + width) return columnIndex;
+            left += width;
+        }
+
+        return -1;
     }
 
     void HideDatePopup()
     {
         _datePopupRow = null;
-        _datePopup.Hide(lstRecent);
+        _datePopupLabel.Visible = false;
     }
 
     void CancelDateHover()
@@ -286,25 +326,6 @@ public partial class MainForm : Form
         _dateHoverTimer.Stop();
         _dateHoverRow = null;
         HideDatePopup();
-    }
-
-    void datePopup_Popup(object? sender, PopupEventArgs eventArgs)
-    {
-        Size textSize = TextRenderer.MeasureText(_datePopupText, UiStyle.Text);
-        eventArgs.ToolTipSize = new Size(textSize.Width + 24, textSize.Height + 16);
-    }
-
-    void datePopup_Draw(object? sender, DrawToolTipEventArgs eventArgs)
-    {
-        eventArgs.DrawBackground();
-        eventArgs.DrawBorder();
-        TextRenderer.DrawText(
-            eventArgs.Graphics,
-            eventArgs.ToolTipText,
-            UiStyle.Text,
-            eventArgs.Bounds,
-            SystemColors.InfoText,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
     }
 
     void btnNewProject_Click(object? sender, EventArgs eventArgs)
@@ -565,11 +586,35 @@ public partial class MainForm : Form
         _notesDirty = true;
     }
 
+    void MainForm_Shown(object? sender, EventArgs eventArgs)
+    {
+        RestoreRecentSplitter();
+        SizeRecentColumns();
+    }
+
+    void splitMain_SplitterMoved(object? sender, SplitterEventArgs eventArgs)
+    {
+        CancelDateHover();
+        SizeRecentColumns();
+    }
+
+    void RestoreRecentSplitter()
+    {
+        int distance = _settings.RecentSplitterDistance;
+        if (distance < splitMain.Panel1MinSize) return;
+
+        int maxDistance = splitMain.Height - splitMain.SplitterWidth - splitMain.Panel2MinSize;
+        if (maxDistance < splitMain.Panel1MinSize) return;
+        if (distance > maxDistance) distance = maxDistance;
+        splitMain.SplitterDistance = distance;
+    }
+
     void MainForm_FormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
         CancelDateHover();
         SaveCurrentNotes();
         RememberWindowBounds();
+        _settings.RecentSplitterDistance = splitMain.SplitterDistance;
         _settings.Save();
     }
 

@@ -12,9 +12,9 @@
     <Product>Grok Launcher</Product>
     <Description>Launch Grok Build in a chosen project folder.</Description>
     <ApplicationIcon>Assets\GrokLauncher.ico</ApplicationIcon>
-    <Version>1.0.5</Version>
-    <AssemblyVersion>1.0.5.0</AssemblyVersion>
-    <FileVersion>1.0.5.0</FileVersion>
+    <Version>1.0.8</Version>
+    <AssemblyVersion>1.0.8.0</AssemblyVersion>
+    <FileVersion>1.0.8.0</FileVersion>
     <ProjectGuid>{6F3A9C21-8B47-4E1D-A5C0-91D2E4B7F803}</ProjectGuid>
   </PropertyGroup>
 
@@ -22,5 +22,15 @@
     <None Include="Assets\GrokLauncher.ico" />
     <EmbeddedResource Include="revisionHistory.h" />
   </ItemGroup>
+
+  <!-- Setup project packages publish\, not bin\Release. Copy after each Release build. -->
+  <Target Name="PublishForSetup" AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(Configuration)' == 'Release'">
+    <MakeDir Directories="$(OutputPath)publish" />
+    <ItemGroup>
+      <_SetupPublishFiles Include="$(OutputPath)*.dll;$(OutputPath)*.exe;$(OutputPath)*.json;$(OutputPath)*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_SetupPublishFiles)" DestinationFolder="$(OutputPath)publish" SkipUnchangedFiles="false" />
+  </Target>
 
 </Project>

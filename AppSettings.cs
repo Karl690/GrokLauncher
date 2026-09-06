@@ -13,6 +13,7 @@ internal sealed class AppSettings
     public int WindowWidth { get; set; }
     public int WindowHeight { get; set; }
     public int WindowState { get; set; }
+    public int RecentSplitterDistance { get; set; }
 
     static readonly JsonSerializerOptions JsonOptions = new()
     {
