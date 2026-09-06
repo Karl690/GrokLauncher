@@ -46,7 +46,7 @@ Every project has revisionHistory.h at the repo root (next to the app or firmwar
 #define APP_TITLE "Grok Launcher"
 #define APP_REVISION "V1.000"
 
-Revision format is Vn.nnn (example V1.000). Bump APP_REVISION in that file when a release meaning changes.
+Revision format is Vn.nnn (example V1.000). Bump APP_REVISION in that file when a release meaning changes, and always bump it as part of a Push (see below).
 
 C# WinForms: every form title bar shows APP_TITLE, a space, then APP_REVISION — for this app, Grok Launcher V1.000. Read the defines from revisionHistory.h. Do not hard-code the caption in the designer as the source of truth.
 
@@ -58,10 +58,21 @@ Only a Microsoft Installer project may be used: a Visual Studio Setup Project (.
 
 Do not use WiX, Inno Setup, NSIS, ClickOnce, MSIX, or any other installer stack.
 
+Push
+
+When asked to push a project, do these steps in order. Do not skip a step. Do not push if a compile failed.
+
+1. Compile (and flash if this repo flashes).
+2. If that compile fails, stop. Do not bump the revision. Do not push.
+3. If it succeeds, bump APP_REVISION in revisionHistory.h: keep Vn.nnn and add one to the last three digits (V1.002 -> V1.003).
+4. Compile again.
+5. If the second compile succeeds, commit (include the revision bump) and push.
+6. If the second compile fails, stop. Do not push.
+
 End of session
 
 - Build (and flash, if this repo flashes) before calling the sitting done.
-- Push when the sitting is over, even if the next sitting is "improve it."
+- Push when the sitting is over, even if the next sitting is "improve it." Follow Push above.
 - Leave the next goal in one sentence if it is already known.
 
 This file

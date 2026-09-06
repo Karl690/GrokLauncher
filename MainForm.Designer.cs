@@ -187,7 +187,7 @@ partial class MainForm
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.002";
+        Text = "Grok Launcher V1.003";
         FormClosing += MainForm_FormClosing;
         ResumeLayout(false);
         PerformLayout();
