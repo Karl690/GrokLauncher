@@ -134,13 +134,30 @@ public partial class MainForm : Form
     {
         if (eventArgs.KeyCode != Keys.Delete) return;
         if (lstRecent.SelectedItems.Count == 0) return;
+        RemoveSelectedRecent();
+        eventArgs.Handled = true;
+    }
+
+    void btnRemoveRecent_Click(object? sender, EventArgs eventArgs)
+    {
+        RemoveSelectedRecent();
+    }
+
+    void RemoveSelectedRecent()
+    {
+        if (lstRecent.SelectedItems.Count == 0)
+        {
+            BigDialog.Show(this, "Select a recent project to remove from the list.", RevisionHistory.TitleBar);
+            return;
+        }
 
         string folder = (string)lstRecent.SelectedItems[0].Tag!;
+        SaveCurrentNotes();
         _settings.RemoveFolder(folder);
         _settings.Save();
         PopulateRecentList();
+        ShowTemplateNotes();
         UpdateTargetPreview();
-        eventArgs.Handled = true;
     }
 
     void txtProjectName_TextChanged(object? sender, EventArgs eventArgs)

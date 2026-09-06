@@ -6,6 +6,7 @@ partial class MainForm
 
     private Label lblRecent;
     private ListView lstRecent;
+    private Button btnRemoveRecent;
     private Button btnNewProject;
     private Button btnExistingProject;
     private Label lblRoot;
@@ -27,6 +28,7 @@ partial class MainForm
     {
         lblRecent = new Label();
         lstRecent = new ListView();
+        btnRemoveRecent = new Button();
         btnNewProject = new Button();
         btnExistingProject = new Button();
         lblRoot = new Label();
@@ -68,11 +70,21 @@ partial class MainForm
         lstRecent.DoubleClick += lstRecent_DoubleClick;
         lstRecent.KeyDown += lstRecent_KeyDown;
 
+        btnRemoveRecent.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnRemoveRecent.Font = UiStyle.Text;
+        btnRemoveRecent.Location = new Point(700, 8);
+        btnRemoveRecent.Name = "btnRemoveRecent";
+        btnRemoveRecent.Size = new Size(240, 48);
+        btnRemoveRecent.TabIndex = 1;
+        btnRemoveRecent.Text = "Remove from list";
+        btnRemoveRecent.UseVisualStyleBackColor = true;
+        btnRemoveRecent.Click += btnRemoveRecent_Click;
+
         btnNewProject.Font = UiStyle.Text;
         btnNewProject.Location = new Point(20, 276);
         btnNewProject.Name = "btnNewProject";
         btnNewProject.Size = new Size(240, 56);
-        btnNewProject.TabIndex = 1;
+        btnNewProject.TabIndex = 2;
         btnNewProject.Text = "New project";
         btnNewProject.UseVisualStyleBackColor = true;
         btnNewProject.Click += btnNewProject_Click;
@@ -81,7 +93,7 @@ partial class MainForm
         btnExistingProject.Location = new Point(276, 276);
         btnExistingProject.Name = "btnExistingProject";
         btnExistingProject.Size = new Size(240, 56);
-        btnExistingProject.TabIndex = 2;
+        btnExistingProject.TabIndex = 3;
         btnExistingProject.Text = "Existing project";
         btnExistingProject.UseVisualStyleBackColor = true;
         btnExistingProject.Click += btnExistingProject_Click;
@@ -106,7 +118,7 @@ partial class MainForm
         txtProjectName.Name = "txtProjectName";
         txtProjectName.PlaceholderText = "for example MyGame";
         txtProjectName.Size = new Size(920, 40);
-        txtProjectName.TabIndex = 3;
+        txtProjectName.TabIndex = 4;
         txtProjectName.TextChanged += txtProjectName_TextChanged;
 
         lblNotes.AutoSize = true;
@@ -122,7 +134,7 @@ partial class MainForm
         rtfNotes.Location = new Point(20, 492);
         rtfNotes.Name = "rtfNotes";
         rtfNotes.Size = new Size(920, 300);
-        rtfNotes.TabIndex = 4;
+        rtfNotes.TabIndex = 5;
         rtfNotes.TextChanged += rtfNotes_TextChanged;
 
         lblTarget.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -138,7 +150,7 @@ partial class MainForm
         btnLaunch.Location = new Point(20, 852);
         btnLaunch.Name = "btnLaunch";
         btnLaunch.Size = new Size(920, 64);
-        btnLaunch.TabIndex = 5;
+        btnLaunch.TabIndex = 6;
         btnLaunch.Text = "Launch";
         btnLaunch.UseVisualStyleBackColor = true;
         btnLaunch.Click += btnLaunch_Click;
@@ -148,7 +160,7 @@ partial class MainForm
         btnLaunchWithSpec.Location = new Point(20, 924);
         btnLaunchWithSpec.Name = "btnLaunchWithSpec";
         btnLaunchWithSpec.Size = new Size(920, 64);
-        btnLaunchWithSpec.TabIndex = 6;
+        btnLaunchWithSpec.TabIndex = 7;
         btnLaunchWithSpec.Text = "Launch and start With Spec";
         btnLaunchWithSpec.UseVisualStyleBackColor = true;
         btnLaunchWithSpec.Click += btnLaunchWithSpec_Click;
@@ -166,6 +178,7 @@ partial class MainForm
         Controls.Add(lblRoot);
         Controls.Add(btnExistingProject);
         Controls.Add(btnNewProject);
+        Controls.Add(btnRemoveRecent);
         Controls.Add(lstRecent);
         Controls.Add(lblRecent);
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -174,7 +187,7 @@ partial class MainForm
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.000";
+        Text = "Grok Launcher V1.001";
         FormClosing += MainForm_FormClosing;
         ResumeLayout(false);
         PerformLayout();
