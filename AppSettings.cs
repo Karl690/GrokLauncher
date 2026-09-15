@@ -41,6 +41,7 @@ internal sealed class AppSettings
             AppSettings? loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
             if (loaded is null) return new AppSettings();
 
+            if (loaded.RecentFolders is null) loaded.RecentFolders = new List<string>();
             loaded.RecentFolders = NormalizeRecentFolders(loaded.RecentFolders);
             return loaded;
         }

@@ -9,6 +9,7 @@ public partial class MainForm : Form
     bool _loadingNotes;
     bool _notesDirty;
     bool _sizingRecentColumns;
+    bool _uiReady;
     readonly System.Windows.Forms.Timer _dateHoverTimer = new();
     readonly Label _datePopupLabel = new();
     ListViewItem? _datePopupRow;
@@ -31,12 +32,17 @@ public partial class MainForm : Form
     {
         _settings = AppSettings.Load();
         InitializeComponent();
-        System.Drawing.Icon? associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        if (associatedIcon is not null) Icon = associatedIcon;
+        try
+        {
+            Icon? associatedIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            if (associatedIcon is not null) Icon = associatedIcon;
+        }
+        catch (Exception)
+        {
+            /* keep the default icon if the exe icon cannot be read */
+        }
         UiStyle.ApplyTo(this);
         InitDateHoverPopup();
-        RestoreWindowBounds();
-        RestoreRecentSplitter();
         ShowTemplateNotes();
         PopulateRecentList();
         RestoreLastRoot();
@@ -97,18 +103,21 @@ public partial class MainForm : Form
         }
 
         lstRecent.EndUpdate();
-        SizeRecentColumns();
+        if (_uiReady) SizeRecentColumns();
         if (lstRecent.SelectedItems.Count > 0) lstRecent.EnsureVisible(lstRecent.SelectedItems[0].Index);
     }
 
     void lstRecent_SizeChanged(object? sender, EventArgs eventArgs)
     {
+        if (!_uiReady) return; /* native list is not ready during WM_CREATE */
         CancelDateHover();
         SizeRecentColumns();
     }
 
     void SizeRecentColumns()
     {
+        if (!_uiReady) return;
+        if (lstRecent.Font is null) return;
         if (lstRecent.Columns.Count < 3) return;
         if (_sizingRecentColumns) return;
         _sizingRecentColumns = true;
@@ -135,11 +144,13 @@ public partial class MainForm : Form
     int MeasureRecentColumn(int columnIndex, string headerText)
     {
         const int cellPadding = 28; /* 18pt bold clips without extra cell inset */
-        int width = TextRenderer.MeasureText(headerText, lstRecent.Font).Width + cellPadding;
+        Font font = lstRecent.Font ?? UiStyle.Text;
+        int width = TextRenderer.MeasureText(headerText, font).Width + cellPadding;
         foreach (ListViewItem row in lstRecent.Items)
         {
             if (columnIndex >= row.SubItems.Count) continue;
-            int cellWidth = TextRenderer.MeasureText(row.SubItems[columnIndex].Text, lstRecent.Font).Width + cellPadding;
+            string cellText = row.SubItems[columnIndex].Text ?? string.Empty;
+            int cellWidth = TextRenderer.MeasureText(cellText, font).Width + cellPadding;
             if (cellWidth > width) width = cellWidth;
         }
 
@@ -225,8 +236,8 @@ public partial class MainForm : Form
 
     void lstRecent_MouseMove(object? sender, MouseEventArgs eventArgs)
     {
-        ListViewHitTestInfo hit = lstRecent.HitTest(eventArgs.Location);
-        if (hit.Item is null || ColumnIndexAtX(eventArgs.X) != LastChangedColumnIndex)
+        ListViewHitTestInfo? hit = lstRecent.HitTest(eventArgs.Location);
+        if (hit is null || hit.Item is null || ColumnIndexAtX(eventArgs.X) != LastChangedColumnIndex)
         {
             CancelDateHover();
             return;
@@ -588,6 +599,8 @@ public partial class MainForm : Form
 
     void MainForm_Shown(object? sender, EventArgs eventArgs)
     {
+        _uiReady = true;
+        RestoreWindowBounds();
         RestoreRecentSplitter();
         SizeRecentColumns();
     }
@@ -602,11 +615,19 @@ public partial class MainForm : Form
     {
         int distance = _settings.RecentSplitterDistance;
         if (distance < splitMain.Panel1MinSize) return;
+        if (splitMain.Height <= 0) return;
 
         int maxDistance = splitMain.Height - splitMain.SplitterWidth - splitMain.Panel2MinSize;
         if (maxDistance < splitMain.Panel1MinSize) return;
         if (distance > maxDistance) distance = maxDistance;
-        splitMain.SplitterDistance = distance;
+        try
+        {
+            splitMain.SplitterDistance = distance;
+        }
+        catch (Exception)
+        {
+            /* keep the designer splitter if the saved distance does not fit */
+        }
     }
 
     void MainForm_FormClosing(object? sender, FormClosingEventArgs eventArgs)
@@ -641,9 +662,16 @@ public partial class MainForm : Form
             _settings.WindowHeight);
         if (!WindowBoundsAreOnAScreen(bounds)) return;
 
-        StartPosition = FormStartPosition.Manual;
-        Bounds = bounds;
-        if (_settings.WindowState == (int)FormWindowState.Maximized) WindowState = FormWindowState.Maximized;
+        try
+        {
+            StartPosition = FormStartPosition.Manual;
+            Bounds = bounds;
+            if (_settings.WindowState == (int)FormWindowState.Maximized) WindowState = FormWindowState.Maximized;
+        }
+        catch (Exception)
+        {
+            /* stay with the default centered window */
+        }
     }
 
     static bool WindowBoundsAreOnAScreen(Rectangle bounds)
