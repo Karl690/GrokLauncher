@@ -11,6 +11,7 @@ public partial class MainForm : Form
     bool _sizingRecentColumns;
     bool _uiReady;
     readonly System.Windows.Forms.Timer _dateHoverTimer = new();
+    readonly System.Windows.Forms.Timer _heartbeatTimer = new();
     readonly Label _datePopupLabel = new();
     ListViewItem? _datePopupRow;
     ListViewItem? _dateHoverRow;
@@ -43,6 +44,7 @@ public partial class MainForm : Form
         }
         UiStyle.ApplyTo(this);
         InitDateHoverPopup();
+        StartHeartbeat();
         ShowTemplateNotes();
         PopulateRecentList();
         RestoreLastRoot();
@@ -69,6 +71,27 @@ public partial class MainForm : Form
 
         _dateHoverTimer.Interval = DateHoverDelayMs;
         _dateHoverTimer.Tick += dateHoverTimer_Tick;
+    }
+
+    void StartHeartbeat()
+    {
+        components ??= new System.ComponentModel.Container();
+        components.Add(_heartbeatTimer);
+        _heartbeatTimer.Interval = 1000;
+        _heartbeatTimer.Tick += (_, _) =>
+        {
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(Path.GetTempPath(), "GrokLauncher.heartbeat"),
+                    DateTime.UtcNow.ToString("o"));
+            }
+            catch (Exception)
+            {
+                /* heartbeat is optional */
+            }
+        };
+        _heartbeatTimer.Start();
     }
 
     void RestoreLastRoot()
@@ -461,6 +484,26 @@ public partial class MainForm : Form
     void btnLaunchWithSpec_Click(object? sender, EventArgs eventArgs)
     {
         LaunchSelectedTarget(startWithSpec: true);
+    }
+
+    void btnInstallGrok_Click(object? sender, EventArgs eventArgs)
+    {
+        try
+        {
+            if (GrokCli.IsInstalled())
+            {
+                BigDialog.Show(
+                    this,
+                    "Grok Build is already installed.\nA PowerShell window will run grok update.",
+                    RevisionHistory.TitleBar);
+            }
+
+            GrokCli.InstallOrUpdate();
+        }
+        catch (Exception exception)
+        {
+            BigDialog.Show(this, exception.Message, RevisionHistory.TitleBar);
+        }
     }
 
     void LaunchSelectedTarget(bool startWithSpec)

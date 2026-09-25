@@ -21,6 +21,7 @@ partial class MainForm
     private Label lblTarget;
     private Button btnLaunch;
     private Button btnLaunchWithSpec;
+    private Button btnInstallGrok;
 
     protected override void Dispose(bool disposing)
     {
@@ -47,6 +48,7 @@ partial class MainForm
         lblTarget = new Label();
         btnLaunch = new Button();
         btnLaunchWithSpec = new Button();
+        btnInstallGrok = new Button();
         ((System.ComponentModel.ISupportInitialize)splitMain).BeginInit();
         splitMain.Panel1.SuspendLayout();
         splitMain.Panel2.SuspendLayout();
@@ -196,18 +198,27 @@ partial class MainForm
         btnLaunchWithSpec.UseVisualStyleBackColor = true;
         btnLaunchWithSpec.Click += btnLaunchWithSpec_Click;
 
+        btnInstallGrok.Dock = DockStyle.Fill;
+        btnInstallGrok.Font = UiStyle.Text;
+        btnInstallGrok.Name = "btnInstallGrok";
+        btnInstallGrok.TabIndex = 8;
+        btnInstallGrok.Text = "Download and install Grok Build";
+        btnInstallGrok.UseVisualStyleBackColor = true;
+        btnInstallGrok.Click += btnInstallGrok_Click;
+
         tableLower.ColumnCount = 1;
         tableLower.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         tableLower.Dock = DockStyle.Fill;
         tableLower.Name = "tableLower";
         tableLower.Padding = new Padding(20, 8, 20, 16);
-        tableLower.RowCount = 8;
+        tableLower.RowCount = 9;
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+        tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
         tableLower.Controls.Add(panelProjectButtons, 0, 0);
@@ -218,6 +229,7 @@ partial class MainForm
         tableLower.Controls.Add(lblTarget, 0, 5);
         tableLower.Controls.Add(btnLaunch, 0, 6);
         tableLower.Controls.Add(btnLaunchWithSpec, 0, 7);
+        tableLower.Controls.Add(btnInstallGrok, 0, 8);
 
         splitMain.Panel2.Controls.Add(tableLower);
 
@@ -226,7 +238,7 @@ partial class MainForm
         splitMain.Name = "splitMain";
         splitMain.Orientation = Orientation.Horizontal;
         splitMain.Panel1MinSize = 180;
-        splitMain.Panel2MinSize = 520;
+        splitMain.Panel2MinSize = 590;
         splitMain.Size = new Size(960, 1008);
         splitMain.SplitterDistance = 400;
         splitMain.SplitterWidth = 14;
@@ -243,7 +255,7 @@ partial class MainForm
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.009";
+        Text = "Grok Launcher V1.011";
         FormClosing += MainForm_FormClosing;
         Shown += MainForm_Shown;
         panelProjectButtons.ResumeLayout(false);

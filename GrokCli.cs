@@ -26,6 +26,48 @@ internal static class GrokCli
         return null;
     }
 
+    public static bool IsInstalled()
+    {
+        return FindExecutable() is not null;
+    }
+
+    public static void InstallOrUpdate()
+    {
+        string bundled = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".grok",
+            "bin",
+            "grok.exe");
+
+        string command;
+        if (FindExecutable() is null)
+        {
+            command =
+                "Write-Host 'Installing Grok Build from x.ai ...'; " +
+                "irm https://x.ai/cli/install.ps1 | iex; " +
+                "Write-Host 'Running grok update ...'; " +
+                "& ($env:USERPROFILE + '\\.grok\\bin\\grok.exe') update; " +
+                "Write-Host 'Done. You can close this window.';";
+        }
+        else
+        {
+            string grokExe = (FindExecutable() ?? bundled).Replace("'", "''");
+            command =
+                "Write-Host 'Grok Build is already installed. Running grok update ...'; " +
+                "& '" + grokExe + "' update; " +
+                "Write-Host 'Done. You can close this window.';";
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = "-NoExit -NoProfile -ExecutionPolicy Bypass -Command \"" + command + "\"",
+            UseShellExecute = true
+        };
+
+        Process.Start(startInfo);
+    }
+
     public static void LaunchInFolder(string folderPath, string? initialPrompt = null)
     {
         string? grokExe = FindExecutable();

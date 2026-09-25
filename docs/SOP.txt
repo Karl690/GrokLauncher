@@ -52,6 +52,14 @@ C# WinForms: every form title bar shows APP_TITLE, a space, then APP_REVISION â€
 
 C/C++: #include "revisionHistory.h" and use the same defines wherever the product name is shown to the user.
 
+C# app test watch (all projects)
+
+Whenever you start or test a C# GUI: launch the .exe as a background command so the job stays alive. Do not Start-Process from a command that then returns â€” that kills the window after about 2 seconds.
+
+Assign a watcher immediately. Poll every 2 seconds with ~/.grok/long-running-background-tasks/watch_csharp_app.ps1. Write %TEMP%\<ProcessName>.heartbeat about once a second from a UI timer.
+
+Do not tell the user the app is up until the watcher has seen a live process or a fresh heartbeat.
+
 Installers
 
 Only a Microsoft Installer project may be used: a Visual Studio Setup Project (.vdproj) in the solution, producing a Windows Installer (.msi). Add that installer project to the solution and take Publish Items (or Primary Output) from the app project.
