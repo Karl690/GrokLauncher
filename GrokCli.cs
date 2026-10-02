@@ -2,6 +2,14 @@ using System.Diagnostics;
 
 namespace GrokLauncher;
 
+internal sealed class GrokLaunch
+{
+    public required Process HostProcess { get; init; }
+    public required string FolderPath { get; init; }
+    public required string TitleToken { get; init; }
+    public required int FontPoints { get; init; }
+}
+
 internal static class GrokCli
 {
     public static string? FindExecutable()
@@ -68,7 +76,7 @@ internal static class GrokCli
         Process.Start(startInfo);
     }
 
-    public static void LaunchInFolder(string folderPath, string? initialPrompt = null)
+    public static GrokLaunch LaunchInFolder(string folderPath, string? initialPrompt = null, int fontPoints = 28)
     {
         string? grokExe = FindExecutable();
         if (grokExe is null)
@@ -78,56 +86,64 @@ internal static class GrokCli
         }
 
         string fullFolder = Path.GetFullPath(folderPath);
-        if (TryLaunchWithWindowsTerminal(fullFolder, grokExe, initialPrompt)) return;
-        LaunchWithCommandPrompt(fullFolder, grokExe, initialPrompt);
+        string titleToken = "GL" + Guid.NewGuid().ToString("N")[..8];
+        fontPoints = AppSettings.NormalizeFontPoints(fontPoints);
+        WindowsTerminalFont.TryEnsureProfile(fontPoints);
+        GuestWindow.WriteConsoleFontProperties(titleToken, grokExe, fontPoints);
+
+        Process? process = StartConhost(titleToken, fullFolder, grokExe, initialPrompt);
+        if (process is null)
+            throw new InvalidOperationException("Could not start Grok Build.");
+
+        return new GrokLaunch
+        {
+            HostProcess = process,
+            FolderPath = fullFolder,
+            TitleToken = titleToken,
+            FontPoints = fontPoints
+        };
     }
 
-    static bool TryLaunchWithWindowsTerminal(string folderPath, string grokExe, string? initialPrompt)
+    static Process? StartConhost(
+        string titleToken,
+        string folderPath,
+        string grokExe,
+        string? initialPrompt)
     {
-        try
-        {
-            string arguments = $"-d {Quote(folderPath)} -- {Quote(grokExe)} --cwd {Quote(folderPath)}";
-            if (!string.IsNullOrWhiteSpace(initialPrompt))
-                arguments += " " + Quote(initialPrompt);
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "wt.exe",
-                Arguments = arguments,
-                UseShellExecute = true
-            };
-
-            Process.Start(startInfo);
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    static void LaunchWithCommandPrompt(string folderPath, string grokExe, string? initialPrompt)
-    {
-        string command = $"title Grok && {Quote(grokExe)} --cwd {Quote(folderPath)}";
+        string command = $"title {titleToken} && {CmdQuote(grokExe)} --cwd {CmdQuote(folderPath)}";
         if (!string.IsNullOrWhiteSpace(initialPrompt))
             command += " " + QuoteForCmd(initialPrompt);
 
-        var startInfo = new ProcessStartInfo
+        string conhost = Path.Combine(Environment.SystemDirectory, "conhost.exe");
+        ProcessStartInfo startInfo;
+        if (File.Exists(conhost))
         {
-            FileName = "cmd.exe",
-            Arguments = "/K " + command,
-            WorkingDirectory = folderPath,
-            UseShellExecute = true
-        };
+            startInfo = new ProcessStartInfo
+            {
+                FileName = conhost,
+                Arguments = "cmd.exe /K " + command,
+                WorkingDirectory = folderPath,
+                UseShellExecute = true
+            };
+        }
+        else
+        {
+            startInfo = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = "/K " + command,
+                WorkingDirectory = folderPath,
+                UseShellExecute = true
+            };
+        }
 
-        Process.Start(startInfo);
+        return Process.Start(startInfo);
     }
 
-    static string Quote(string value)
+    static string CmdQuote(string value)
     {
         string trimmed = value.Trim().Trim('"');
-        string escaped = trimmed.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        return $"\"{escaped}\"";
+        return "\"" + trimmed + "\"";
     }
 
     static string QuoteForCmd(string value)

@@ -3,6 +3,7 @@ namespace GrokLauncher;
 public partial class MainForm : Form
 {
     readonly AppSettings _settings;
+    readonly List<GrokWindowHost> _openSessions = new();
     string? _newProjectRoot;
     string? _notesFolder;
     bool _launchNewProject;
@@ -43,6 +44,7 @@ public partial class MainForm : Form
             /* keep the default icon if the exe icon cannot be read */
         }
         UiStyle.ApplyTo(this);
+        LoadConsoleFontChoice();
         InitDateHoverPopup();
         StartHeartbeat();
         ShowTemplateNotes();
@@ -50,6 +52,34 @@ public partial class MainForm : Form
         RestoreLastRoot();
         if (lstRecent.Items.Count > 0) lstRecent.Items[0].Selected = true;
         UpdateTargetPreview();
+    }
+
+    void LoadConsoleFontChoice()
+    {
+        cmbConsoleFont.Items.Clear();
+        cmbConsoleFont.Items.Add("16 pt");
+        cmbConsoleFont.Items.Add("18 pt");
+        cmbConsoleFont.Items.Add("20 pt");
+        cmbConsoleFont.Items.Add("28 pt");
+        _settings.CapturedConsoleFontPoints = 28;
+        cmbConsoleFont.SelectedIndex = 3;
+        WindowsTerminalFont.TryEnsureProfile(28);
+    }
+
+    int SelectedFontPoints()
+    {
+        if (cmbConsoleFont.SelectedIndex == 0) return 16;
+        if (cmbConsoleFont.SelectedIndex == 1) return 18;
+        if (cmbConsoleFont.SelectedIndex == 2) return 20;
+        return 28;
+    }
+
+    void cmbConsoleFont_SelectedIndexChanged(object? sender, EventArgs eventArgs)
+    {
+        if (!_uiReady) return;
+        _settings.CapturedConsoleFontPoints = SelectedFontPoints();
+        _settings.Save();
+        WindowsTerminalFont.TryEnsureProfile(_settings.CapturedConsoleFontPoints);
     }
 
     void InitDateHoverPopup()
@@ -538,15 +568,25 @@ public partial class MainForm : Form
                 "Grok Launcher");
         }
 
-        try
+        GrokWindowHost? existing = FindOpenSession(targetFolder);
+        if (existing is not null)
         {
-            string? specPrompt = startWithSpec ? SessionNotes.BuildSpecPrompt(rtfNotes.Text) : null;
-            GrokCli.LaunchInFolder(targetFolder, specPrompt);
+            tabsMain.SelectedTab = existing.TabPage;
+            existing.SetGuestVisible(true);
         }
-        catch (Exception exception)
+        else
         {
-            BigDialog.Show(this, exception.Message, "Grok Launcher");
-            return;
+            try
+            {
+                string? specPrompt = startWithSpec ? SessionNotes.BuildSpecPrompt(rtfNotes.Text) : null;
+                GrokLaunch launch = GrokCli.LaunchInFolder(targetFolder, specPrompt, SelectedFontPoints());
+                OpenSessionTab(launch);
+            }
+            catch (Exception exception)
+            {
+                BigDialog.Show(this, exception.Message, "Grok Launcher");
+                return;
+            }
         }
 
         _settings.RememberFolder(targetFolder);
@@ -555,6 +595,99 @@ public partial class MainForm : Form
         _launchNewProject = false;
         txtProjectName.Clear();
         UpdateTargetPreview();
+    }
+
+    GrokWindowHost? FindOpenSession(string folderPath)
+    {
+        foreach (GrokWindowHost session in _openSessions)
+        {
+            if (!session.IsAlive) continue;
+            if (string.Equals(session.FolderPath, folderPath, StringComparison.OrdinalIgnoreCase))
+                return session;
+        }
+
+        return null;
+    }
+
+    void OpenSessionTab(GrokLaunch launch)
+    {
+        var page = new TabPage(TabLabelFor(launch.FolderPath))
+        {
+            Name = "tabSession",
+            Padding = new Padding(0),
+            UseVisualStyleBackColor = false,
+            BackColor = Color.Black
+        };
+        var host = new GrokWindowHost(launch, page);
+        host.SessionClosed += Host_SessionClosed;
+        page.Controls.Add(host);
+        tabsMain.TabPages.Add(page);
+        tabsMain.SelectedTab = page;
+        _openSessions.Add(host);
+        UiStyle.ApplyTo(page);
+        host.BeginCapture();
+    }
+
+    static string TabLabelFor(string folderPath)
+    {
+        string projectName = Path.GetFileName(
+            folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (string.IsNullOrEmpty(projectName)) projectName = folderPath;
+        if (projectName.Length <= 20) return projectName;
+        return projectName.Substring(0, 20);
+    }
+
+    void Host_SessionClosed(GrokWindowHost host)
+    {
+        if (IsDisposed) return;
+        host.SessionClosed -= Host_SessionClosed;
+        _openSessions.Remove(host);
+        TabPage page = host.TabPage;
+        if (tabsMain.TabPages.Contains(page)) tabsMain.TabPages.Remove(page);
+        if (!host.IsDisposed) host.Dispose();
+        page.Dispose();
+    }
+
+    void tabsMain_SelectedIndexChanged(object? sender, EventArgs eventArgs)
+    {
+        foreach (GrokWindowHost session in _openSessions)
+        {
+            bool selected = session.TabPage == tabsMain.SelectedTab;
+            session.SetGuestVisible(selected);
+        }
+    }
+
+    void tabsMain_MouseDown(object? sender, MouseEventArgs eventArgs)
+    {
+        if (eventArgs.Button != MouseButtons.Middle) return;
+
+        for (int tabIndex = 0; tabIndex < tabsMain.TabCount; tabIndex++)
+        {
+            if (!tabsMain.GetTabRect(tabIndex).Contains(eventArgs.Location)) continue;
+            if (tabIndex == 0) return; /* launcher tab stays */
+            CloseSessionTab(tabsMain.TabPages[tabIndex]);
+            return;
+        }
+    }
+
+    void CloseSessionTab(TabPage page)
+    {
+        GrokWindowHost? host = null;
+        foreach (GrokWindowHost session in _openSessions)
+        {
+            if (session.TabPage != page) continue;
+            host = session;
+            break;
+        }
+
+        if (host is null) return;
+
+        host.SessionClosed -= Host_SessionClosed;
+        host.ReleaseToDesktop();
+        _openSessions.Remove(host);
+        if (tabsMain.TabPages.Contains(page)) tabsMain.TabPages.Remove(page);
+        if (!host.IsDisposed) host.Dispose();
+        page.Dispose();
     }
 
     string? ResolveTargetFolder()
@@ -676,6 +809,8 @@ public partial class MainForm : Form
     void MainForm_FormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
         CancelDateHover();
+        foreach (GrokWindowHost session in _openSessions.ToArray())
+            session.CloseCapturedSession();
         SaveCurrentNotes();
         RememberWindowBounds();
         _settings.RecentSplitterDistance = splitMain.SplitterDistance;

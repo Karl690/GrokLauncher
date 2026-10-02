@@ -14,6 +14,7 @@ internal sealed class AppSettings
     public int WindowHeight { get; set; }
     public int WindowState { get; set; }
     public int RecentSplitterDistance { get; set; }
+    public int CapturedConsoleFontPoints { get; set; } = 28;
 
     static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -43,6 +44,7 @@ internal sealed class AppSettings
 
             if (loaded.RecentFolders is null) loaded.RecentFolders = new List<string>();
             loaded.RecentFolders = NormalizeRecentFolders(loaded.RecentFolders);
+            loaded.CapturedConsoleFontPoints = NormalizeFontPoints(loaded.CapturedConsoleFontPoints);
             return loaded;
         }
         catch (Exception)
@@ -73,8 +75,17 @@ internal sealed class AppSettings
             Directory.CreateDirectory(directory);
 
         RecentFolders = NormalizeRecentFolders(RecentFolders);
+        CapturedConsoleFontPoints = NormalizeFontPoints(CapturedConsoleFontPoints);
         string json = JsonSerializer.Serialize(this, JsonOptions);
         File.WriteAllText(filePath, json);
+    }
+
+    public static int NormalizeFontPoints(int pointSize)
+    {
+        if (pointSize <= 16) return 16;
+        if (pointSize == 18) return 18;
+        if (pointSize == 20) return 20;
+        return 28;
     }
 
     static List<string> NormalizeRecentFolders(IEnumerable<string> folders)

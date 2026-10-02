@@ -72,6 +72,22 @@ internal static class UiStyle
                 split.Panel1.BackColor = RecentsPanel;
                 split.Panel2.BackColor = LowerPanel;
                 break;
+            case TabControl:
+                break;
+            case TabPage page:
+                if (page.Name == "tabLauncher")
+                {
+                    page.BackColor = FormBack;
+                    page.ForeColor = Ink;
+                }
+                else
+                {
+                    page.BackColor = Color.Black;
+                    page.ForeColor = Color.White;
+                }
+                break;
+            case GrokWindowHost:
+                break; /* console host stays black */
             case ListView list:
                 list.BackColor = Surface;
                 list.ForeColor = Ink;
@@ -82,6 +98,11 @@ internal static class UiStyle
                 textBox.BackColor = Surface;
                 textBox.ForeColor = Ink;
                 textBox.BorderStyle = BorderStyle.FixedSingle;
+                break;
+            case ComboBox combo:
+                combo.BackColor = Surface;
+                combo.ForeColor = Ink;
+                combo.FlatStyle = FlatStyle.Flat;
                 break;
             case RichTextBox notes:
                 notes.BackColor = Surface;
@@ -99,6 +120,7 @@ internal static class UiStyle
                 break;
             case Label label:
                 if (label.Name == "lblDatePopup") break;
+                if (label.Name == "lblCaptureStatus") break;
                 label.BackColor = Color.Transparent;
                 label.ForeColor = Ink;
                 break;

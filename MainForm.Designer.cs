@@ -4,6 +4,8 @@ partial class MainForm
 {
     private System.ComponentModel.IContainer components = null;
 
+    private TabControl tabsMain;
+    private TabPage tabLauncher;
     private SplitContainer splitMain;
     private Panel panelRecentHeader;
     private Label lblRecent;
@@ -19,6 +21,9 @@ partial class MainForm
     private Label lblNotes;
     private RichTextBox rtfNotes;
     private Label lblTarget;
+    private Panel panelConsoleFont;
+    private Label lblConsoleFont;
+    private ComboBox cmbConsoleFont;
     private Button btnLaunch;
     private Button btnLaunchWithSpec;
     private Button btnInstallGrok;
@@ -31,6 +36,8 @@ partial class MainForm
 
     private void InitializeComponent()
     {
+        tabsMain = new TabControl();
+        tabLauncher = new TabPage();
         splitMain = new SplitContainer();
         panelRecentHeader = new Panel();
         lblRecent = new Label();
@@ -46,6 +53,9 @@ partial class MainForm
         lblNotes = new Label();
         rtfNotes = new RichTextBox();
         lblTarget = new Label();
+        panelConsoleFont = new Panel();
+        lblConsoleFont = new Label();
+        cmbConsoleFont = new ComboBox();
         btnLaunch = new Button();
         btnLaunchWithSpec = new Button();
         btnInstallGrok = new Button();
@@ -56,6 +66,9 @@ partial class MainForm
         panelRecentHeader.SuspendLayout();
         tableLower.SuspendLayout();
         panelProjectButtons.SuspendLayout();
+        panelConsoleFont.SuspendLayout();
+        tabLauncher.SuspendLayout();
+        tabsMain.SuspendLayout();
         SuspendLayout();
 
         Font = UiStyle.Text;
@@ -182,10 +195,30 @@ partial class MainForm
         lblTarget.Text = "Select a recent project, open an existing one, or create a new one.";
         lblTarget.TextAlign = ContentAlignment.MiddleLeft;
 
+        cmbConsoleFont.DropDownStyle = ComboBoxStyle.DropDownList;
+        cmbConsoleFont.Dock = DockStyle.Right;
+        cmbConsoleFont.Font = UiStyle.Text;
+        cmbConsoleFont.Name = "cmbConsoleFont";
+        cmbConsoleFont.Size = new Size(180, 44);
+        cmbConsoleFont.TabIndex = 6;
+        cmbConsoleFont.SelectedIndexChanged += cmbConsoleFont_SelectedIndexChanged;
+
+        lblConsoleFont.Dock = DockStyle.Fill;
+        lblConsoleFont.Font = UiStyle.Text;
+        lblConsoleFont.Name = "lblConsoleFont";
+        lblConsoleFont.Padding = new Padding(0, 0, 12, 0);
+        lblConsoleFont.Text = "Grok window font";
+        lblConsoleFont.TextAlign = ContentAlignment.MiddleLeft;
+
+        panelConsoleFont.Dock = DockStyle.Fill;
+        panelConsoleFont.Name = "panelConsoleFont";
+        panelConsoleFont.Controls.Add(cmbConsoleFont);
+        panelConsoleFont.Controls.Add(lblConsoleFont);
+
         btnLaunch.Dock = DockStyle.Fill;
         btnLaunch.Font = UiStyle.Text;
         btnLaunch.Name = "btnLaunch";
-        btnLaunch.TabIndex = 6;
+        btnLaunch.TabIndex = 7;
         btnLaunch.Text = "Launch";
         btnLaunch.UseVisualStyleBackColor = true;
         btnLaunch.Click += btnLaunch_Click;
@@ -193,7 +226,7 @@ partial class MainForm
         btnLaunchWithSpec.Dock = DockStyle.Fill;
         btnLaunchWithSpec.Font = UiStyle.Text;
         btnLaunchWithSpec.Name = "btnLaunchWithSpec";
-        btnLaunchWithSpec.TabIndex = 7;
+        btnLaunchWithSpec.TabIndex = 8;
         btnLaunchWithSpec.Text = "Launch and start With Spec";
         btnLaunchWithSpec.UseVisualStyleBackColor = true;
         btnLaunchWithSpec.Click += btnLaunchWithSpec_Click;
@@ -201,7 +234,7 @@ partial class MainForm
         btnInstallGrok.Dock = DockStyle.Fill;
         btnInstallGrok.Font = UiStyle.Text;
         btnInstallGrok.Name = "btnInstallGrok";
-        btnInstallGrok.TabIndex = 8;
+        btnInstallGrok.TabIndex = 9;
         btnInstallGrok.Text = "Download and install Grok Build";
         btnInstallGrok.UseVisualStyleBackColor = true;
         btnInstallGrok.Click += btnInstallGrok_Click;
@@ -211,13 +244,14 @@ partial class MainForm
         tableLower.Dock = DockStyle.Fill;
         tableLower.Name = "tableLower";
         tableLower.Padding = new Padding(20, 8, 20, 16);
-        tableLower.RowCount = 9;
+        tableLower.RowCount = 10;
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+        tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
         tableLower.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
@@ -227,9 +261,10 @@ partial class MainForm
         tableLower.Controls.Add(lblNotes, 0, 3);
         tableLower.Controls.Add(rtfNotes, 0, 4);
         tableLower.Controls.Add(lblTarget, 0, 5);
-        tableLower.Controls.Add(btnLaunch, 0, 6);
-        tableLower.Controls.Add(btnLaunchWithSpec, 0, 7);
-        tableLower.Controls.Add(btnInstallGrok, 0, 8);
+        tableLower.Controls.Add(panelConsoleFont, 0, 6);
+        tableLower.Controls.Add(btnLaunch, 0, 7);
+        tableLower.Controls.Add(btnLaunchWithSpec, 0, 8);
+        tableLower.Controls.Add(btnInstallGrok, 0, 9);
 
         splitMain.Panel2.Controls.Add(tableLower);
 
@@ -245,20 +280,39 @@ partial class MainForm
         splitMain.TabStop = false;
         splitMain.SplitterMoved += splitMain_SplitterMoved;
 
+        tabLauncher.Controls.Add(splitMain);
+        tabLauncher.Name = "tabLauncher";
+        tabLauncher.Padding = new Padding(0);
+        tabLauncher.Text = "Launcher";
+        tabLauncher.UseVisualStyleBackColor = true;
+
+        tabsMain.Controls.Add(tabLauncher);
+        tabsMain.Dock = DockStyle.Fill;
+        tabsMain.Font = UiStyle.Text;
+        tabsMain.Multiline = true;
+        tabsMain.Name = "tabsMain";
+        tabsMain.Padding = new Point(18, 8);
+        tabsMain.SelectedIndex = 0;
+        tabsMain.Size = new Size(960, 1008);
+        tabsMain.TabIndex = 0;
+        tabsMain.SelectedIndexChanged += tabsMain_SelectedIndexChanged;
+        tabsMain.MouseDown += tabsMain_MouseDown;
+
         AutoScaleDimensions = new SizeF(15F, 36F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(960, 1008);
-        Controls.Add(splitMain);
+        Controls.Add(tabsMain);
         FormBorderStyle = FormBorderStyle.Sizable;
         MaximizeBox = true;
         MinimizeBox = true;
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.011";
+        Text = "Grok Launcher V1.012";
         FormClosing += MainForm_FormClosing;
         Shown += MainForm_Shown;
         panelProjectButtons.ResumeLayout(false);
+        panelConsoleFont.ResumeLayout(false);
         tableLower.ResumeLayout(false);
         tableLower.PerformLayout();
         panelRecentHeader.ResumeLayout(false);
@@ -266,6 +320,8 @@ partial class MainForm
         splitMain.Panel2.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)splitMain).EndInit();
         splitMain.ResumeLayout(false);
+        tabLauncher.ResumeLayout(false);
+        tabsMain.ResumeLayout(false);
         ResumeLayout(false);
     }
 }
