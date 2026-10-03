@@ -657,6 +657,23 @@ public partial class MainForm : Form
         }
     }
 
+    void MainForm_Activated(object? sender, EventArgs eventArgs)
+    {
+        BeginInvoke(FocusSelectedSessionGuest); /* after WinForms restores ActiveControl */
+    }
+
+    void FocusSelectedSessionGuest()
+    {
+        if (WindowState == FormWindowState.Minimized) return;
+        foreach (GrokWindowHost session in _openSessions)
+        {
+            if (session.TabPage != tabsMain.SelectedTab) continue;
+            ActiveControl = session;
+            session.FocusGuest();
+            return;
+        }
+    }
+
     void tabsMain_MouseDown(object? sender, MouseEventArgs eventArgs)
     {
         if (eventArgs.Button != MouseButtons.Middle) return;

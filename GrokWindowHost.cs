@@ -9,7 +9,6 @@ internal sealed class GrokWindowHost : Panel
     readonly System.Windows.Forms.Timer _captureTimer = new();
     readonly System.Windows.Forms.Timer _guestWatchTimer = new();
     int _captureAttempts;
-    int _fontApplyRemaining;
     GuestPlacement _original;
     bool _released;
     bool _closedRaised;
@@ -27,7 +26,8 @@ internal sealed class GrokWindowHost : Panel
         BackColor = Color.Black;
         ForeColor = Color.White;
         Name = "grokWindowHost";
-        SetStyle(ControlStyles.ResizeRedraw, true);
+        TabStop = true;
+        SetStyle(ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
 
         _statusLabel = new Label
         {
@@ -100,9 +100,15 @@ internal sealed class GrokWindowHost : Panel
         if (visible)
         {
             FitToHost();
-            GuestWindow.Focus(GuestHandle);
-            ApplyCapturedFont();
+            FocusGuest();
         }
+    }
+
+    public void FocusGuest()
+    {
+        if (GuestHandle == IntPtr.Zero) return;
+        if (!GuestWindow.IsAlive(GuestHandle)) return;
+        GuestWindow.Focus(GuestHandle);
     }
 
     public void ReleaseToDesktop()
@@ -176,14 +182,13 @@ internal sealed class GrokWindowHost : Panel
 
         GuestHandle = guestHandle;
         _statusLabel.Visible = false;
-        _fontApplyRemaining = 6;
-        ApplyCapturedFont();
+        ApplyCapturedFont(); /* once at attach; do not AttachConsole again later */
         _guestWatchTimer.Start();
         bool selected = TabPage.Parent is TabControl tabs && tabs.SelectedTab == TabPage;
         if (selected)
         {
             FitToHost();
-            GuestWindow.Focus(guestHandle);
+            FocusGuest();
         }
         else
         {
@@ -199,11 +204,18 @@ internal sealed class GrokWindowHost : Panel
             BeginClose();
             return;
         }
+    }
 
-        if (_fontApplyRemaining <= 0) return;
-        ApplyCapturedFont();
-        FitToHost();
-        _fontApplyRemaining--;
+    protected override void OnGotFocus(EventArgs eventArgs)
+    {
+        base.OnGotFocus(eventArgs);
+        FocusGuest();
+    }
+
+    protected override void OnMouseDown(MouseEventArgs eventArgs)
+    {
+        base.OnMouseDown(eventArgs);
+        FocusGuest();
     }
 
     void ApplyCapturedFont()

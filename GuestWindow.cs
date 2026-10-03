@@ -44,10 +44,7 @@ internal static class GuestWindow
     const uint FileShareWrite = 0x00000002;
     const uint OpenExisting = 3;
     const int FontFamilyTrueTypeModern = 54;
-    const uint InputKeyboard = 1;
-    const uint KeyeventfKeyup = 0x0002;
-    const ushort VkControl = 0x11;
-    const ushort VkOemPlus = 0xBB;
+    const uint GaRoot = 2;
 
     public static bool IsAlive(IntPtr windowHandle)
     {
@@ -391,65 +388,25 @@ internal static class GuestWindow
     public static void Focus(IntPtr windowHandle)
     {
         if (!IsAlive(windowHandle)) return;
-        SetForegroundWindow(windowHandle);
-    }
 
-    public static void SendCtrlPlus(IntPtr windowHandle, int times)
-    {
-        if (!IsAlive(windowHandle)) return;
-        if (times < 1) return;
+        IntPtr topLevel = GetAncestor(windowHandle, GaRoot);
+        if (topLevel == IntPtr.Zero) topLevel = windowHandle;
 
         uint thisThread = GetCurrentThreadId();
         uint windowThread = GetWindowThreadProcessId(windowHandle, out _);
         bool attached = false;
-        if (windowThread != 0 && windowThread != thisThread)
-            attached = AttachThreadInput(thisThread, windowThread, true);
-
-        SetForegroundWindow(windowHandle);
-        SetFocus(windowHandle);
         try
         {
-            for (int repeat = 0; repeat < times; repeat++)
-            {
-                SendChord(VkControl, VkOemPlus);
-                Thread.Sleep(80);
-            }
+            if (windowThread != 0 && windowThread != thisThread)
+                attached = AttachThreadInput(thisThread, windowThread, true);
+
+            SetForegroundWindow(topLevel); /* parent form, not the child console */
+            SetFocus(windowHandle);
         }
         finally
         {
             if (attached) AttachThreadInput(thisThread, windowThread, false);
         }
-    }
-
-    static void SendChord(ushort modifierVirtualKey, ushort keyVirtualKey)
-    {
-        INPUT[] inputs =
-        {
-            KeyInput(modifierVirtualKey, keyUp: false),
-            KeyInput(keyVirtualKey, keyUp: false),
-            KeyInput(keyVirtualKey, keyUp: true),
-            KeyInput(modifierVirtualKey, keyUp: true)
-        };
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
-    }
-
-    static INPUT KeyInput(ushort virtualKey, bool keyUp)
-    {
-        return new INPUT
-        {
-            type = InputKeyboard,
-            U = new InputUnion
-            {
-                ki = new KEYBDINPUT
-                {
-                    wVk = virtualKey,
-                    wScan = 0,
-                    dwFlags = keyUp ? KeyeventfKeyup : 0,
-                    time = 0,
-                    dwExtraInfo = IntPtr.Zero
-                }
-            }
-        };
     }
 
     static IntPtr FindByTitleToken(string titleToken)
@@ -642,8 +599,8 @@ internal static class GuestWindow
     [DllImport("user32.dll")]
     static extern bool AttachThreadInput(uint attachFrom, uint attachTo, bool attach);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    static extern uint SendInput(uint inputCount, INPUT[] inputs, int inputSize);
+    [DllImport("user32.dll")]
+    static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
 
     [DllImport("kernel32.dll")]
     static extern uint GetCurrentThreadId();
@@ -715,41 +672,6 @@ internal static class GuestWindow
 
     [DllImport("user32.dll")]
     static extern uint GetDpiForSystem();
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct MOUSEINPUT
-    {
-        public int dx;
-        public int dy;
-        public uint mouseData;
-        public uint dwFlags;
-        public uint time;
-        public IntPtr dwExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct KEYBDINPUT
-    {
-        public ushort wVk;
-        public ushort wScan;
-        public uint dwFlags;
-        public uint time;
-        public IntPtr dwExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    struct InputUnion
-    {
-        [FieldOffset(0)] public MOUSEINPUT mi;
-        [FieldOffset(0)] public KEYBDINPUT ki;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct INPUT
-    {
-        public uint type;
-        public InputUnion U;
-    }
 
     [StructLayout(LayoutKind.Sequential)]
     struct COORD
