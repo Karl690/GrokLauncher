@@ -4,6 +4,8 @@ partial class MainForm
 {
     private System.ComponentModel.IContainer components = null;
 
+    private Panel panelCloseBar;
+    private Button btnCloseTab;
     private TabControl tabsMain;
     private TabPage tabLauncher;
     private SplitContainer splitMain;
@@ -36,6 +38,8 @@ partial class MainForm
 
     private void InitializeComponent()
     {
+        panelCloseBar = new Panel();
+        btnCloseTab = new Button();
         tabsMain = new TabControl();
         tabLauncher = new TabPage();
         splitMain = new SplitContainer();
@@ -69,6 +73,7 @@ partial class MainForm
         panelConsoleFont.SuspendLayout();
         tabLauncher.SuspendLayout();
         tabsMain.SuspendLayout();
+        panelCloseBar.SuspendLayout();
         SuspendLayout();
 
         Font = UiStyle.Text;
@@ -298,17 +303,34 @@ partial class MainForm
         tabsMain.SelectedIndexChanged += tabsMain_SelectedIndexChanged;
         tabsMain.MouseDown += tabsMain_MouseDown;
 
+        btnCloseTab.Dock = DockStyle.Right;
+        btnCloseTab.Enabled = false;
+        btnCloseTab.Font = UiStyle.Text;
+        btnCloseTab.Name = "btnCloseTab";
+        btnCloseTab.Size = new Size(220, 56);
+        btnCloseTab.TabIndex = 1;
+        btnCloseTab.Text = "Close Tab";
+        btnCloseTab.UseVisualStyleBackColor = true;
+        btnCloseTab.Click += btnCloseTab_Click;
+
+        panelCloseBar.Controls.Add(btnCloseTab);
+        panelCloseBar.Dock = DockStyle.Top;
+        panelCloseBar.Name = "panelCloseBar";
+        panelCloseBar.Padding = new Padding(12, 4, 12, 4);
+        panelCloseBar.Size = new Size(960, 64);
+
         AutoScaleDimensions = new SizeF(15F, 36F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(960, 1008);
         Controls.Add(tabsMain);
+        Controls.Add(panelCloseBar);
         FormBorderStyle = FormBorderStyle.Sizable;
         MaximizeBox = true;
         MinimizeBox = true;
         MinimumSize = new Size(900, 900);
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Grok Launcher V1.013";
+        Text = "Grok Launcher V1.014";
         FormClosing += MainForm_FormClosing;
         Shown += MainForm_Shown;
         Activated += MainForm_Activated;
@@ -323,6 +345,7 @@ partial class MainForm
         splitMain.ResumeLayout(false);
         tabLauncher.ResumeLayout(false);
         tabsMain.ResumeLayout(false);
+        panelCloseBar.ResumeLayout(false);
         ResumeLayout(false);
     }
 }

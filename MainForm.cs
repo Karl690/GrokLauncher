@@ -646,6 +646,7 @@ public partial class MainForm : Form
         if (tabsMain.TabPages.Contains(page)) tabsMain.TabPages.Remove(page);
         if (!host.IsDisposed) host.Dispose();
         page.Dispose();
+        UpdateCloseTabButton();
     }
 
     void tabsMain_SelectedIndexChanged(object? sender, EventArgs eventArgs)
@@ -655,6 +656,21 @@ public partial class MainForm : Form
             bool selected = session.TabPage == tabsMain.SelectedTab;
             session.SetGuestVisible(selected);
         }
+
+        UpdateCloseTabButton();
+    }
+
+    void UpdateCloseTabButton()
+    {
+        btnCloseTab.Enabled = tabsMain.SelectedIndex > 0;
+    }
+
+    void btnCloseTab_Click(object? sender, EventArgs eventArgs)
+    {
+        TabPage? page = tabsMain.SelectedTab;
+        if (page is null) return;
+        if (page == tabLauncher) return;
+        CloseSessionTab(page);
     }
 
     void MainForm_Activated(object? sender, EventArgs eventArgs)
@@ -700,11 +716,12 @@ public partial class MainForm : Form
         if (host is null) return;
 
         host.SessionClosed -= Host_SessionClosed;
-        host.ReleaseToDesktop();
+        host.CloseCapturedSession();
         _openSessions.Remove(host);
         if (tabsMain.TabPages.Contains(page)) tabsMain.TabPages.Remove(page);
         if (!host.IsDisposed) host.Dispose();
         page.Dispose();
+        UpdateCloseTabButton();
     }
 
     string? ResolveTargetFolder()
