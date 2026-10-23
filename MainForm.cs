@@ -810,9 +810,71 @@ public partial class MainForm : Form
     void MainForm_Shown(object? sender, EventArgs eventArgs)
     {
         _uiReady = true;
+        CapMinimumSizeToScreen();
         RestoreWindowBounds();
+        ClampWindowToWorkingArea();
+        FitSplitterToHeight();
         RestoreRecentSplitter();
         SizeRecentColumns();
+    }
+
+    protected override void OnResize(EventArgs eventArgs)
+    {
+        base.OnResize(eventArgs);
+        if (!_uiReady) return;
+        FitSplitterToHeight();
+    }
+
+    void CapMinimumSizeToScreen()
+    {
+        Rectangle work = Screen.FromControl(this).WorkingArea;
+        if (work.Width < 320 || work.Height < 240) return;
+
+        int width = Math.Min(MinimumSize.Width, work.Width);
+        int height = Math.Min(MinimumSize.Height, work.Height);
+        MinimumSize = new Size(width, height);
+    }
+
+    void ClampWindowToWorkingArea()
+    {
+        if (WindowState != FormWindowState.Normal) return;
+
+        Rectangle work = Screen.FromControl(this).WorkingArea;
+        if (work.Width < 320 || work.Height < 240) return;
+
+        int width = Math.Min(Width, work.Width);
+        int height = Math.Min(Height, work.Height);
+        int left = Left;
+        int top = Top;
+        if (left < work.Left) left = work.Left;
+        if (top < work.Top) top = work.Top;
+        if (left + width > work.Right) left = work.Right - width;
+        if (top + height > work.Bottom) top = work.Bottom - height;
+        Bounds = new Rectangle(left, top, width, height);
+    }
+
+    void FitSplitterToHeight()
+    {
+        const int smallestPanel = 25; /* SplitContainer rejects a min under 25 */
+        int available = splitMain.Height - splitMain.SplitterWidth;
+        if (available < smallestPanel * 2) return;
+
+        int panel1Min = splitMain.Panel1MinSize;
+        int panel2Min = splitMain.Panel2MinSize;
+        if (panel1Min + panel2Min <= available) return;
+
+        int nextPanel2 = Math.Max(smallestPanel, available * 2 / 3);
+        int nextPanel1 = Math.Max(smallestPanel, available - nextPanel2);
+        if (nextPanel1 + nextPanel2 > available) nextPanel1 = smallestPanel;
+        try
+        {
+            if (nextPanel1 < panel1Min) splitMain.Panel1MinSize = nextPanel1;
+            if (nextPanel2 < panel2Min) splitMain.Panel2MinSize = nextPanel2;
+        }
+        catch (Exception)
+        {
+            /* leave the designer mins if the split cannot shrink */
+        }
     }
 
     void splitMain_SplitterMoved(object? sender, SplitterEventArgs eventArgs)

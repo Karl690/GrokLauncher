@@ -8,6 +8,7 @@ internal sealed class GrokWindowHost : Panel
     readonly Label _statusLabel;
     readonly System.Windows.Forms.Timer _captureTimer = new();
     readonly System.Windows.Forms.Timer _guestWatchTimer = new();
+    readonly System.Windows.Forms.Timer _fitTimer = new();
     int _captureAttempts;
     GuestPlacement _original;
     bool _released;
@@ -46,6 +47,9 @@ internal sealed class GrokWindowHost : Panel
 
         _guestWatchTimer.Interval = 500;
         _guestWatchTimer.Tick += guestWatchTimer_Tick;
+
+        _fitTimer.Interval = 80;
+        _fitTimer.Tick += fitTimer_Tick;
 
         try
         {
@@ -91,6 +95,17 @@ internal sealed class GrokWindowHost : Panel
         if (!IsHandleCreated) return;
         if (ClientSize.Width < 16 || ClientSize.Height < 16) return;
         GuestWindow.MoveTo(GuestHandle, 0, 0, ClientSize.Width, ClientSize.Height);
+        _fitTimer.Stop();
+        _fitTimer.Start(); /* snap the type-in row after the resize settles */
+    }
+
+    void fitTimer_Tick(object? sender, EventArgs eventArgs)
+    {
+        _fitTimer.Stop();
+        if (GuestHandle == IntPtr.Zero) return;
+        if (!IsHandleCreated) return;
+        if (ClientSize.Width < 16 || ClientSize.Height < 16) return;
+        GuestWindow.FitConsoleGrid(GuestHandle, 0, 0, ClientSize.Width, ClientSize.Height);
     }
 
     public void SetGuestVisible(bool visible)
@@ -115,6 +130,7 @@ internal sealed class GrokWindowHost : Panel
     {
         _captureTimer.Stop();
         _guestWatchTimer.Stop();
+        _fitTimer.Stop();
         if (_released) return;
         _released = true;
         if (GuestHandle != IntPtr.Zero) GuestWindow.ReleaseToDesktop(_original);
@@ -125,6 +141,7 @@ internal sealed class GrokWindowHost : Panel
     {
         _captureTimer.Stop();
         _guestWatchTimer.Stop();
+        _fitTimer.Stop();
         if (_released) return;
         _released = true;
         IntPtr guest = GuestHandle;
@@ -144,10 +161,12 @@ internal sealed class GrokWindowHost : Panel
         if (disposing)
         {
             _captureTimer.Stop();
-            _captureTimer.Dispose();
             _guestWatchTimer.Stop();
-            _guestWatchTimer.Dispose();
+            _fitTimer.Stop();
             if (!_released) CloseCapturedSession();
+            _captureTimer.Dispose();
+            _guestWatchTimer.Dispose();
+            _fitTimer.Dispose();
         }
 
         base.Dispose(disposing);

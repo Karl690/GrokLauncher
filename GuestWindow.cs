@@ -379,6 +379,135 @@ internal static class GuestWindow
         MoveWindow(windowHandle, left, top, width, height, true);
     }
 
+    public static void FitConsoleGrid(IntPtr windowHandle, int left, int top, int width, int height)
+    {
+        if (!IsAlive(windowHandle)) return;
+        if (width < 16 || height < 16) return;
+        FitConsoleToPixels(windowHandle, left, top, width, height); /* last row is the type-in line */
+    }
+
+    static IntPtr _fittedWindow;
+    static int _fittedWidth;
+    static int _fittedHeight;
+
+    static void FitConsoleToPixels(IntPtr consoleWindow, int left, int top, int pixelWidth, int pixelHeight)
+    {
+        if (consoleWindow == _fittedWindow && pixelWidth == _fittedWidth && pixelHeight == _fittedHeight) return;
+
+        var processIds = new HashSet<int>();
+        GetWindowThreadProcessId(consoleWindow, out uint windowProcessId);
+        if (windowProcessId == 0) return;
+
+        processIds.Add((int)windowProcessId);
+        processIds.UnionWith(GetProcessTree((int)windowProcessId));
+        foreach (int processId in processIds)
+        {
+            if (!TryFitConsoleOnProcess((uint)processId, consoleWindow, left, top, pixelWidth, pixelHeight)) continue;
+            _fittedWindow = consoleWindow;
+            _fittedWidth = pixelWidth;
+            _fittedHeight = pixelHeight;
+            return;
+        }
+    }
+
+    static bool TryFitConsoleOnProcess(
+        uint processId,
+        IntPtr consoleWindow,
+        int left,
+        int top,
+        int pixelWidth,
+        int pixelHeight)
+    {
+        FreeConsole();
+        if (!AttachConsole(processId)) return false;
+
+        IntPtr outputHandle = IntPtr.Zero;
+        bool closeOutput = false;
+        try
+        {
+            outputHandle = CreateFile(
+                "CONOUT$",
+                GenericRead | GenericWrite,
+                FileShareRead | FileShareWrite,
+                IntPtr.Zero,
+                OpenExisting,
+                0,
+                IntPtr.Zero);
+            if (outputHandle == IntPtr.Zero || outputHandle == new IntPtr(-1))
+            {
+                outputHandle = GetStdHandle(StdOutputHandle);
+                closeOutput = false;
+            }
+            else
+            {
+                closeOutput = true;
+            }
+
+            if (outputHandle == IntPtr.Zero || outputHandle == new IntPtr(-1)) return false;
+            return TryApplyConsoleGrid(outputHandle, consoleWindow, left, top, pixelWidth, pixelHeight);
+        }
+        finally
+        {
+            if (closeOutput) CloseHandle(outputHandle);
+            FreeConsole();
+        }
+    }
+
+    static bool TryApplyConsoleGrid(
+        IntPtr outputHandle,
+        IntPtr consoleWindow,
+        int left,
+        int top,
+        int pixelWidth,
+        int pixelHeight)
+    {
+        var font = new CONSOLE_FONT_INFO();
+        if (!GetCurrentConsoleFont(outputHandle, false, ref font)) return false;
+
+        int cellWidth = font.dwFontSize.X;
+        int cellHeight = font.dwFontSize.Y;
+        if (cellWidth < 1 || cellHeight < 1) return false;
+        if (!GetConsoleScreenBufferInfo(outputHandle, out CONSOLE_SCREEN_BUFFER_INFO info)) return false;
+
+        int columnCount = pixelWidth / cellWidth;
+        int rowCount = pixelHeight / cellHeight;
+        if (info.dwMaximumWindowSize.X > 0 && columnCount > info.dwMaximumWindowSize.X) columnCount = info.dwMaximumWindowSize.X;
+        if (info.dwMaximumWindowSize.Y > 0 && rowCount > info.dwMaximumWindowSize.Y) rowCount = info.dwMaximumWindowSize.Y;
+        if (columnCount < 20 || rowCount < 4) return false;
+
+        bool growWidth = columnCount > info.dwSize.X;
+        bool growHeight = rowCount > info.dwSize.Y;
+        if (growWidth || growHeight)
+        {
+            var grown = new COORD
+            {
+                X = (short)Math.Max(columnCount, (int)info.dwSize.X),
+                Y = (short)Math.Max(rowCount, (int)info.dwSize.Y)
+            };
+            SetConsoleScreenBufferSize(outputHandle, grown);
+        }
+
+        var window = new SMALL_RECT
+        {
+            Left = 0,
+            Top = 0,
+            Right = (short)(columnCount - 1),
+            Bottom = (short)(rowCount - 1)
+        };
+        if (!SetConsoleWindowInfo(outputHandle, true, ref window)) return false;
+
+        var fitted = new COORD { X = (short)columnCount, Y = (short)rowCount };
+        SetConsoleScreenBufferSize(outputHandle, fitted); /* no scrollbar over the type-in line */
+
+        int fittedWidth = columnCount * cellWidth;
+        int fittedHeight = rowCount * cellHeight;
+        if (fittedWidth > pixelWidth) fittedWidth = pixelWidth;
+        if (fittedHeight > pixelHeight) fittedHeight = pixelHeight;
+        if (fittedWidth < 16 || fittedHeight < 16) return true;
+        MoveWindow(consoleWindow, left, top, fittedWidth, fittedHeight, true);
+        return true;
+    }
+
     public static void SetVisible(IntPtr windowHandle, bool visible)
     {
         if (!IsAlive(windowHandle)) return;
@@ -662,7 +791,19 @@ internal static class GuestWindow
         IntPtr templateFile);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern bool GetCurrentConsoleFont(IntPtr consoleOutput, bool maximumWindow, ref CONSOLE_FONT_INFO font);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool GetCurrentConsoleFontEx(IntPtr consoleOutput, bool maximumWindow, ref CONSOLE_FONT_INFOEX font);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool GetConsoleScreenBufferInfo(IntPtr consoleOutput, out CONSOLE_SCREEN_BUFFER_INFO info);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool SetConsoleScreenBufferSize(IntPtr consoleOutput, COORD size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool SetConsoleWindowInfo(IntPtr consoleOutput, bool absolute, ref SMALL_RECT window);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool SetCurrentConsoleFontEx(IntPtr consoleOutput, bool maximumWindow, ref CONSOLE_FONT_INFOEX font);
@@ -678,6 +819,32 @@ internal static class GuestWindow
     {
         public short X;
         public short Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct SMALL_RECT
+    {
+        public short Left;
+        public short Top;
+        public short Right;
+        public short Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct CONSOLE_FONT_INFO
+    {
+        public uint nFont;
+        public COORD dwFontSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct CONSOLE_SCREEN_BUFFER_INFO
+    {
+        public COORD dwSize;
+        public COORD dwCursorPosition;
+        public SMALL_RECT srWindow;
+        public ushort wAttributes;
+        public COORD dwMaximumWindowSize;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
