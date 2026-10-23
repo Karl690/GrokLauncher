@@ -11,6 +11,7 @@ public partial class MainForm : Form
     bool _notesDirty;
     bool _sizingRecentColumns;
     bool _uiReady;
+    int _installRowHeight;
     readonly System.Windows.Forms.Timer _dateHoverTimer = new();
     readonly System.Windows.Forms.Timer _heartbeatTimer = new();
     readonly Label _datePopupLabel = new();
@@ -18,6 +19,7 @@ public partial class MainForm : Form
     ListViewItem? _dateHoverRow;
 
     const int LastChangedColumnIndex = 1;
+    const int InstallGrokRowIndex = 9;
     const int DateHoverDelayMs = 400;
     const int LastChangedMaxDepth = 12;
     const int LastChangedMaxFiles = 8000;
@@ -813,9 +815,99 @@ public partial class MainForm : Form
         CapMinimumSizeToScreen();
         RestoreWindowBounds();
         ClampWindowToWorkingArea();
+        _installRowHeight = InstallGrokRowHeight();
+        if (GrokCli.IsInstalled()) CollapseInstallRow();
         FitSplitterToHeight();
         RestoreRecentSplitter();
+        AdjustInstallRowSplitter();
         SizeRecentColumns();
+        if (!GrokCli.IsInstalled()) OfferGrokInstall();
+    }
+
+    void CollapseInstallRow()
+    {
+        int rowHeight = _installRowHeight;
+        if (tableLower.RowStyles.Count > InstallGrokRowIndex)
+        {
+            tableLower.RowStyles[InstallGrokRowIndex].SizeType = SizeType.Absolute;
+            tableLower.RowStyles[InstallGrokRowIndex].Height = 0;
+        }
+
+        if (tableLower.Controls.Contains(btnInstallGrok))
+        {
+            tableLower.Controls.Remove(btnInstallGrok);
+            btnInstallGrok.Dispose();
+        }
+
+        int nextMin = splitMain.Panel2MinSize - rowHeight;
+        if (nextMin < 25) nextMin = 25; /* SplitContainer rejects a min under 25 */
+        try
+        {
+            splitMain.Panel2MinSize = nextMin;
+        }
+        catch (Exception)
+        {
+            /* keep the designer minimum if the split cannot shrink */
+        }
+    }
+
+    void AdjustInstallRowSplitter()
+    {
+        bool rowWasShown = _settings.ShowGrokInstallRow != false; /* null means the saved split still includes the button */
+
+        if (GrokCli.IsInstalled())
+        {
+            if (rowWasShown) MoveRecentSplitter(_installRowHeight); /* give the button row to the recent list */
+            _settings.ShowGrokInstallRow = false;
+            return;
+        }
+
+        if (!rowWasShown) MoveRecentSplitter(-_installRowHeight); /* put the button row back */
+        _settings.ShowGrokInstallRow = true;
+    }
+
+    int InstallGrokRowHeight()
+    {
+        if (tableLower.RowStyles.Count <= InstallGrokRowIndex) return 0;
+        return (int)Math.Round(tableLower.RowStyles[InstallGrokRowIndex].Height);
+    }
+
+    void MoveRecentSplitter(int panel1Delta)
+    {
+        if (panel1Delta == 0) return;
+        if (splitMain.Height <= 0) return;
+
+        int distance = splitMain.SplitterDistance + panel1Delta;
+        int maxDistance = splitMain.Height - splitMain.SplitterWidth - splitMain.Panel2MinSize;
+        if (maxDistance < splitMain.Panel1MinSize) return;
+        if (distance > maxDistance) distance = maxDistance;
+        if (distance < splitMain.Panel1MinSize) distance = splitMain.Panel1MinSize;
+        try
+        {
+            splitMain.SplitterDistance = distance;
+        }
+        catch (Exception)
+        {
+            /* keep the current split if the new distance does not fit */
+        }
+    }
+
+    void OfferGrokInstall()
+    {
+        bool installNow = BigDialog.AskYesNo(
+            this,
+            "Grok Build is not installed.\nDownload and install it now?",
+            RevisionHistory.TitleBar);
+        if (!installNow) return;
+
+        try
+        {
+            GrokCli.InstallOrUpdate();
+        }
+        catch (Exception exception)
+        {
+            BigDialog.Show(this, exception.Message, RevisionHistory.TitleBar);
+        }
     }
 
     protected override void OnResize(EventArgs eventArgs)

@@ -16,6 +16,9 @@ internal sealed class AppSettings
     public int RecentSplitterDistance { get; set; }
     public int CapturedConsoleFontPoints { get; set; } = 28;
 
+    /* null: saved splitter still includes the install button. false: that row was already removed. */
+    public bool? ShowGrokInstallRow { get; set; }
+
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,

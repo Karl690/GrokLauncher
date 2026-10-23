@@ -2,6 +2,6 @@
 #define REVISION_HISTORY_H
 
 #define APP_TITLE "Grok Launcher"
-#define APP_REVISION "V1.015"
+#define APP_REVISION "V1.016"
 
 #endif
